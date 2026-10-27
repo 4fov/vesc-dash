@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#050505"><meta name="apple-mobile-web-app-capable" content="yes">
+<title>VESC Dash</title><style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{color-scheme:dark;--bg:#050505;--card:#101010;--line:#252525;--mut:#8a8a8a;--acc:#35f28a;--bad:#ff6961}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:#f5f5f5;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+button,input,select{font-family:inherit}
+.app{max-width:560px;height:100dvh;margin:auto;padding:max(14px,env(safe-area-inset-top)) 16px max(10px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:10px}
+header{display:flex;justify-content:space-between;align-items:center;gap:10px;flex:none}
+.brand{font-size:18px;font-weight:900;letter-spacing:1px}.brand span{color:var(--mut);font-weight:400}
+.hright{display:flex;align-items:center;gap:10px;min-width:0}
+.status{display:flex;align-items:center;gap:7px;color:#aaa;font-size:10px;letter-spacing:1px;white-space:nowrap}
+.status i{width:8px;height:8px;border-radius:50%;background:#555;flex:none}.status i.on{background:var(--acc);box-shadow:0 0 8px var(--acc)}
+.pill{padding:6px 10px;border:1px solid #444;border-radius:99px;background:#181818;color:#eee;font-size:9px;font-weight:700;letter-spacing:1px}
+.screen{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none}.screen::-webkit-scrollbar{display:none}
+.hidden{display:none!important}
+#dashboard{display:flex;flex-direction:column;gap:10px}
+.gauge-wrap{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
+.eyebrow{color:var(--mut);font-size:10px;letter-spacing:2px;text-align:center}
+.gauge{position:relative;width:min(82vw,340px,46dvh);aspect-ratio:1}
+.gauge svg{width:100%;height:100%;transform:rotate(-225deg)}
+circle{fill:none;stroke-width:8}
+.track{stroke:#222;stroke-dasharray:589 196;stroke-linecap:round}
+.arc{stroke:var(--acc);stroke-dasharray:0 785;stroke-linecap:round;transition:stroke-dasharray .12s;filter:drop-shadow(0 0 6px rgba(53,242,138,.45))}
+.center{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;padding-bottom:6%}
+.center strong{font-size:clamp(60px,min(24vw,14dvh),112px);line-height:1;letter-spacing:-3px;font-variant-numeric:tabular-nums;font-weight:800}
+.center span{margin-top:6px;color:#aaa;font-size:12px;letter-spacing:4px}
+.caption{color:#666;font-size:9px;letter-spacing:2px;text-align:center;min-height:12px}
+.gpspill{display:inline-flex;align-items:baseline;gap:6px;padding:6px 14px;border:1px solid var(--line);border-radius:99px;background:var(--card);color:var(--mut);font-size:10px;letter-spacing:1.5px}
+.gpspill b{color:#fff;font-size:15px;letter-spacing:0;font-variant-numeric:tabular-nums}
+.tiles{display:flex;flex-direction:column;gap:8px;flex:none}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px}
+.tile{min-width:0;padding:12px 11px;border:1px solid var(--line);border-radius:14px;background:var(--card);color:inherit;text-align:left;display:flex;flex-direction:column;gap:7px;font-size:inherit}
+button.tile{cursor:pointer}
+.tile>span{color:var(--mut);font-size:9px;letter-spacing:1.2px}
+.tile>strong{font-size:clamp(17px,5.2vw,23px);white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:700}
+.tile strong small{font-size:.55em;color:var(--mut);font-weight:400}
+.tile>small{color:var(--mut);font-size:10px;overflow-wrap:anywhere}
+.bar{height:4px;background:#2a2a2a;border-radius:4px;overflow:hidden}#bar{height:100%;width:0;background:var(--acc);transition:width .3s}
+.footer{text-align:center;color:#666;font-size:9px;letter-spacing:1.5px;padding:2px 0}
+h1{margin:6px 0 4px;font-size:30px;letter-spacing:-1px}h1 span{color:var(--mut);font-weight:400}
+p.sub{color:var(--mut);font-size:12px;line-height:1.5;margin:0 0 16px}
+.card{padding:16px;border:1px solid var(--line);border-radius:15px;background:var(--card)}
+.card>label,.card .lbl{display:block;color:var(--mut);font-size:9px;letter-spacing:1.2px;margin-bottom:8px}
+.card>strong{display:block;font-size:36px;font-variant-numeric:tabular-nums}
+.card>small{display:block;margin-top:6px;color:var(--mut);font-size:11px}
+.info{margin:10px 0;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--mut);font-size:11px;line-height:1.6}
+.group{border:1px solid var(--line);border-radius:15px;background:var(--card);padding:4px 16px;margin-bottom:12px}
+.group>h2{margin:14px 0 2px;font-size:10px;letter-spacing:1.5px;color:var(--mut);font-weight:600}
+.row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.row b{display:block;font-size:13px}.row small{display:block;margin-top:5px;color:var(--mut);font-size:11px;line-height:1.4;overflow-wrap:anywhere}
+.row>div{min-width:0}
+.btn{padding:9px 13px;border:1px solid #444;border-radius:10px;background:#1c1c1c;color:#fff;font-size:10px;font-weight:700;letter-spacing:.5px;flex:none;cursor:pointer}
+.btn.acc{border-color:var(--acc);color:var(--acc)}
+.btn:disabled{opacity:.4}
+.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:14px 0}
+.formgrid label{display:flex;flex-direction:column;gap:6px;font-size:11px;color:#bbb}
+.formgrid input,.formgrid select{width:100%;min-width:0;padding:10px;border:1px solid #333;border-radius:9px;background:#0b0b0b;color:#fff;font-size:14px}
+nav{flex:none;display:grid;grid-template-columns:repeat(5,1fr);gap:5px;padding-top:2px}
+nav button{padding:12px 2px;border:1px solid var(--line);border-radius:12px;background:#0b0b0b;color:#777;font-size:10px;font-weight:700;letter-spacing:.5px}
+nav button.active{color:#fff;border-color:#666;background:#181818}
+
+
+.leaflet-container{background:#0b0b0b;font-family:inherit}.leaflet-control-attribution{background:rgba(0,0,0,.6)!important;color:#888!important;font-size:9px}.leaflet-control-attribution a{color:#aaa!important}
+.maphead{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.mapbox{position:relative;height:min(44dvh,420px);min-height:220px;border:1px solid var(--line);border-radius:15px;overflow:hidden;background:#0b0b0b;margin-top:6px}
+#map,#mapFallback{width:100%;height:100%;display:block}
+.mapbtn{position:absolute;top:10px;z-index:1000;padding:7px 10px;border:1px solid #444;border-radius:99px;background:rgba(15,15,15,.85);color:#eee;font-size:9px;font-weight:700;letter-spacing:1px;cursor:pointer}
+.mapbtn.warn{border-color:var(--bad);color:var(--bad)}
+.btn.big{width:100%;padding:15px 10px;font-size:12px;letter-spacing:1px}
+.trip{border:1px solid var(--line);border-radius:14px;background:var(--card);padding:14px;margin-bottom:10px}
+.trip h3{margin:0 0 10px;font-size:13px}
+.trip .meta{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;color:var(--mut);font-size:9px;letter-spacing:1px}
+.trip .meta b{display:block;color:#fff;font-size:15px;letter-spacing:0;margin-top:5px;white-space:nowrap}
+.trip .tsub{margin-top:10px;color:var(--mut);font-size:11px}
+.trip .acts{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+
+/* ride screen: flat stats, no boxes */
+#dashboard .tiles{gap:14px;padding-top:12px;border-top:1px solid #161616}
+#dashboard .tile{background:none;border:0;border-radius:0;padding:2px 4px;align-items:center;text-align:center;gap:5px}
+#dashboard .grid3 .tile+.tile{border-left:1px solid #1a1a1a}
+#dashboard .tile>span{font-size:9px;letter-spacing:1.5px;color:#6f6f6f}
+#dashboard .tile>strong{font-size:clamp(18px,5.4vw,26px);font-weight:700}
+#dashboard .tile>small{font-size:10px;color:#777}
+#dashboard .tile .bar{width:70%;height:3px}
+#dashboard button.tile{color:inherit}
+#dashboard button.tile:active{opacity:.6}
+@media(orientation:landscape) and (max-height:520px){
+ .app{max-width:none;display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);column-gap:16px;row-gap:4px;padding:max(8px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+ header{grid-column:2;grid-row:1}
+ .screen{grid-column:2;grid-row:2}
+ nav{grid-column:1;grid-row:1/3;grid-template-columns:1fr;align-content:center;gap:6px;padding:0;width:80px}
+ nav button{padding:12px 2px}
+ h1{font-size:24px;margin:2px 0}
+ #dashboard{flex-direction:row;align-items:center;gap:20px}
+ #dashboard .gauge-wrap{flex:1 1 50%;min-width:0;gap:6px}
+ #dashboard .tiles{flex:1 1 50%;min-width:0;justify-content:center;border-top:0;padding-top:0;gap:18px}
+ .gauge{width:min(56dvh,250px)}
+ .center strong{font-size:clamp(48px,min(18vw,17dvh),96px)}
+ .mapbox{height:min(62dvh,300px);min-height:150px}
+ #dashboard .tile>strong{font-size:clamp(16px,min(3vw,6.5dvh),24px)}
+}
+@media(max-height:680px) and (orientation:portrait){
+ .gauge{width:min(74vw,300px,40dvh)}
+ #dashboard .tiles{gap:10px;padding-top:8px}
+ .app{gap:6px}
+}
+</style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" media="print" onload="this.media='all'">
+<script async id="leafletJs" src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+</head>
+<body><div class="app">
+<header><div class="brand">VESC <span>DASH</span></div>
+<div class="hright"><button class="pill hidden" id="disconnectTop">DISCONNECT</button><div class="status"><i id="dot"></i><span id="status">DISCONNECTED</span></div></div></header>
+
+<main id="dashboard" class="screen">
+<div class="gauge-wrap">
+<div class="eyebrow">TELEMETRY · <span id="source">DEMO</span><span id="recMark" class="hidden" style="color:var(--bad)"> · ● REC</span></div>
+<div class="gauge"><svg viewBox="0 0 300 300"><circle class="track" cx="150" cy="150" r="125"/><circle class="arc" id="arc" cx="150" cy="150" r="125"/></svg><div class="center"><strong id="speed">0</strong><span id="units">KM/H</span></div></div>
+<div class="caption" id="speedCaption">SIMULATED SPEED</div>
+<div class="gpspill">GPS <b id="gpsSpeed">--</b> <span id="gpsUnit">KM/H</span></div>
+</div>
+<div class="tiles">
+<div class="grid3">
+<button class="tile" id="tripReset"><span>TRIP · RESET</span><strong><b id="trip">0.0</b> <small id="tripUnit">km</small></strong></button>
+<div class="tile"><span>DUTY</span><strong id="duty">--%</strong></div>
+<div class="tile"><span>ESC TEMP</span><strong id="fet">--°C</strong></div>
+</div>
+<div class="grid3">
+<div class="tile"><span>BATTERY</span><strong id="battery">--%</strong><div class="bar"><div id="bar"></div></div><small id="voltage">-- V</small></div>
+<div class="tile"><span>POWER</span><strong id="power">-- W</strong><small id="inputCurrent">-- A input</small></div>
+<div class="tile"><span>MOTOR TEMP</span><strong id="motorTemp">--°C</strong><small id="motorCurrent">-- A motor</small></div>
+</div>
+<div class="footer" id="notice">DEMO DATA · NOT REAL TELEMETRY</div>
+</div>
+</main>
+
+<main id="batteryScreen" class="screen hidden"><h1>Battery <span>status</span></h1><p class="sub">Controller-reported values</p>
+<section class="card"><label>PACK VOLTAGE</label><strong id="packVoltage">-- V</strong><small id="batteryNote">No live battery data</small></section>
+<div class="grid2">
+<div class="tile"><span>INPUT CURRENT</span><strong id="batteryCurrent">-- A</strong></div>
+<div class="tile"><span>CHARGE ESTIMATE</span><strong id="estimate">--</strong></div>
+<div class="tile"><span>ENERGY USED</span><strong id="whUsed">-- Wh</strong><small>since controller power-on</small></div>
+<div class="tile"><span>ERPM / FAULT</span><strong id="erpm">--</strong><small id="faultInfo">fault: --</small></div>
+</div>
+<div class="info">Charge is estimated from pack voltage and the series cell count in Settings. Voltage sags under load, so it reads low while accelerating and recovers when you stop. A VESC cannot report individual cell voltages.</div>
+</main>
+
+<main id="mapScreen" class="screen hidden">
+<div class="maphead"><h1>Live <span>map</span></h1><button class="pill hidden" id="reviewPill">BACK TO LIVE</button></div>
+<div class="mapbox"><div id="map"></div><canvas id="mapFallback" class="hidden"></canvas>
+<button class="mapbtn" id="mapGps" style="left:10px">GPS OFF</button><button class="mapbtn" id="followBtn" style="right:10px">FOLLOW ON</button></div>
+<div class="caption" id="mapNote" style="margin-top:8px"></div>
+<div class="grid2">
+<div class="tile"><span id="mDistLbl">SESSION DISTANCE</span><strong id="mDist">0.00 km</strong><small id="mTime">not recording</small></div>
+<div class="tile"><span>RANGE LEFT</span><strong id="mRange">--</strong><small id="mRangeNote">estimate</small></div>
+<div class="tile"><span>CONSUMPTION</span><strong id="mCons">--</strong><small>recent riding</small></div>
+<div class="tile"><span>AVG / MAX SPEED</span><strong id="mSpeed">--</strong><small>this trip</small></div>
+</div>
+<div class="grid2"><button class="btn acc big" id="tripStart">START TRIP</button><button class="btn big" id="tripEnd" disabled>END TRIP</button></div>
+<div class="caption" id="mapInfo2" style="margin-top:8px;min-height:14px"></div>
+<div class="info">Range = battery capacity × charge left (estimated from pack voltage) ÷ your recent Wh per km, counting 0% at the voltage-curve floor. The bike may cut out earlier, and hard riding lowers the number. Set battery capacity in Settings. The map needs internet for tiles; the track still draws offline.</div>
+</main>
+<main id="tripsScreen" class="screen hidden"><h1>Saved <span>trips</span></h1><p class="sub" id="tripsSum">No trips yet.</p><div id="tripList"></div>
+<div class="info">Trips are stored in this browser on this device. Export a trip as GPX to keep a backup.</div></main>
+<main id="settings" class="screen hidden"><h1>App <span>settings</span></h1><p class="sub">Connection, calibration and display</p>
+<div class="group"><h2>CONNECTION</h2>
+<div class="row"><div><b>Bluetooth LE</b><small id="bleInfo">BLE UART adapter required</small></div><button class="btn acc" id="connectBle">CONNECT</button></div>
+<div class="row"><div><b>USB serial</b><small id="usbInfo">Desktop Chrome/Edge, compatible adapter</small></div><button class="btn acc" id="connectUsb">CONNECT</button></div>
+<div class="row"><div><b>Disconnect</b><small>Close the link cleanly so the adapter can be reused</small></div><button class="btn" id="disconnectBtn" disabled>DISCONNECT</button></div>
+</div>
+<div class="group"><h2>DISPLAY</h2>
+<div class="row"><div><b>Demo mode</b><small>Simulated data, not live telemetry</small></div><button class="btn" id="demoToggle">ON</button></div>
+<div class="row"><div><b>Speed units</b><small>Dashboard and trip</small></div><button class="btn" id="unitToggle">KM/H</button></div>
+<div class="row"><div><b>GPS speed</b><small id="gpsInfo">Uses browser location permission</small></div><button class="btn" id="gpsToggle">OFF</button></div>
+<div class="row"><div><b>Speed source</b><small>VESC RPM or GPS</small></div><button class="btn" id="speedSource">VESC</button></div>
+<div class="row"><div><b>Keep screen awake</b><small id="wakeInfo">Supported browsers only</small></div><button class="btn" id="wakeToggle">OFF</button></div>
+</div>
+<div class="group"><h2>CALIBRATION</h2>
+<div class="formgrid">
+<label>Wheel diameter (mm)<input id="wheelDiameter" type="number" value="650" min="50" max="1000"></label>
+<label>Motor pole pairs<input id="polePairs" type="number" value="7" min="1" max="50"></label>
+<label>Gear ratio<input id="gearRatio" type="number" value="1" min=".1" max="100" step="any"></label>
+<label>Gauge maximum<input id="gaugeMax" type="number" value="100" min="10" max="250"></label>
+<label>Battery capacity (Wh)<input id="packWh" type="number" min="0" step="any" placeholder="e.g. 1976"></label>
+<label>Controllers sharing load<select id="ctrlMult"><option value="1">1 (only the connected one)</option><option value="2" selected>2 (both motors)</option></select></label>
+<label style="grid-column:1/-1">Battery pack (series cells)<select id="seriesCells">
+<option value="12">12S · 44 V nominal</option><option value="13">13S · 48 V nominal</option><option value="14" selected>14S · 52 V nominal</option><option value="16">16S · 60 V nominal</option><option value="18">18S · 67 V nominal</option><option value="20">20S · 74 V nominal</option><option value="21">21S · 78 V nominal</option><option value="22">22S · 81 V nominal</option><option value="24">24S · 89 V nominal</option></select></label>
+</div>
+<div class="row"><div><b>Calibrate speed from GPS</b><small id="calInfo">Turn GPS on, ride at a steady 20+ km/h, then tap. Adjusts the gear ratio so VESC speed matches GPS.</small></div><button class="btn acc" id="calibrate">CALIBRATE</button></div>
+</div>
+<div class="info">Read-only dashboard. It does not send motor-control commands. VESC GET_VALUES layouts vary by firmware; verify readings against a known reference.</div>
+</main>
+<nav><button data-screen="dashboard" class="active">RIDE</button><button data-screen="batteryScreen">BATTERY</button><button data-screen="mapScreen">MAP</button><button data-screen="tripsScreen">TRIPS</button><button data-screen="settings">SETTINGS</button></nav>
+</div>
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const BLE_PROFILES=[
+  {name:"Nordic UART",service:"6e400001-b5a3-f393-e0a9-e50e24dcca9e",rx:"6e400002-b5a3-f393-e0a9-e50e24dcca9e",tx:"6e400003-b5a3-f393-e0a9-e50e24dcca9e"},
+  {name:"HM-10 / FFE0",service:0xffe0},
+  {name:"FFF0 UART",service:0xfff0},
+  {name:"FFE5 UART",service:0xffe5},
+  {name:"ISSC transparent UART",service:"49535343-fe7d-4ae5-8fa9-9fafd205e455"},
+  {name:"Vendor FF00",service:0xff00}
+];
+let demo=true,unit="kmh",source="vesc",gpsOn=false,gpsWatch=null,wakeLock=null,wakeOn=false;
+let device=null,server=null,writeChar=null,notifyChar=null,port=null,writer=null,reader=null,transport="",connected=false,buffer=new Uint8Array(0),lastReply=0,lastReq=0,requestInFlight=false;
+let gpsKmh=null,trip=0,lastLoop=performance.now(),phase=0,phaseStart=performance.now(),demoSpeed=0;
+let t={voltage:null,inputCurrent:null,motorCurrent:null,duty:null,rpm:null,fet:null,motor:null,battery:null};
+const phases=[{d:3000,a:0,b:50},{d:1800,a:50,b:68},{d:1200,a:68,b:48},{d:2800,a:48,b:90},{d:2200,a:90,b:0}];
+function status(s,on=false,err=false){$("status").textContent=s;$("dot").classList.toggle("on",on);$("dot").style.background=err?"#ff6961":""}
+function settings(){return{diam:Number($("wheelDiameter").value),pairs:Number($("polePairs").value),ratio:Number($("gearRatio").value),max:Math.max(10,Number($("gaugeMax").value)||100),cells:Number($("seriesCells").value)}}
+function vescSpeed(){let s=settings();if(!Number.isFinite(t.rpm)||s.diam<=0||s.pairs<=0||s.ratio<=0)return null;return Math.abs(t.rpm)/s.pairs/s.ratio*Math.PI*s.diam/1000*60/1000}
+function kmh(){if(demo)return demoSpeed;return source==="gps"?gpsKmh:vescSpeed()}
+function disp(v){return Number.isFinite(v)?(unit==="mph"?v*.621371:v):null}
+function fmt(v,n=1){return Number.isFinite(v)?v.toFixed(n):"--"}
+function setNotice(s){$("notice").textContent=s}
+function showScreen(id){["dashboard","batteryScreen","mapScreen","tripsScreen","settings"].forEach(x=>$(x).classList.toggle("hidden",x!==id));document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.screen===id))}
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>showScreen(b.dataset.screen));
+function crc16(a){let c=0;for(const b of a){c^=b<<8;for(let i=0;i<8;i++)c=c&0x8000?(c<<1)^0x1021:c<<1;c&=65535}return c}
+function packet(payload){let p;if(payload.length<256){p=new Uint8Array(payload.length+5);p[0]=2;p[1]=payload.length;p.set(payload,2)}else{p=new Uint8Array(payload.length+6);p[0]=3;p[1]=payload.length>>8;p[2]=payload.length&255;p.set(payload,3)}let h=p[0]===2?2:3,c=crc16(payload);p[p.length-3]=c>>8;p[p.length-2]=c&255;p[p.length-1]=3;return p}
+function i16(v,o){return v.getInt16(o,false)}function i32(v,o){return v.getInt32(o,false)}
+function parseValues(p){
+  if(p[0]!==4)return;
+  // Common VESC COMM_GET_VALUES layout: temp FET/motor, currents, duty, ERPM, voltage, counters.
+  // Firmware variants may differ; require a sufficiently long payload before decoding.
+  if(p.length<54){$("bleInfo").textContent="VESC reply too short for the common GET_VALUES layout; firmware protocol may differ.";return}
+  const v=new DataView(p.buffer,p.byteOffset,p.byteLength);let o=1;
+  const fet=i16(v,o)/10;o+=2;const motor=i16(v,o)/10;o+=2;
+  const mc=i32(v,o)/100;o+=4;const ic=i32(v,o)/100;o+=4;o+=8;
+  const duty=i16(v,o)/1000;o+=2;const rpm=i32(v,o);o+=4;const volts=i16(v,o)/10;const ah=i32(v,29)/10000,wh=i32(v,37)/10000,fault=v.getUint8(53);
+  if(![fet,motor,mc,ic,duty,rpm,volts].every(Number.isFinite))return;
+  t={...t,fet,motor,motorCurrent:mc,inputCurrent:ic,duty,rpm,voltage:volts,battery:null,ah,wh,fault};lastReply=Date.now();connected=true;demo=false;status("CONNECTED",true);
+}
+function receive(data){const a=data instanceof Uint8Array?data:new Uint8Array(data);const n=new Uint8Array(buffer.length+a.length);n.set(buffer);n.set(a,buffer.length);buffer=n;while(buffer.length>=5){let h,len;if(buffer[0]===2){h=2;len=buffer[1]}else if(buffer[0]===3){if(buffer.length<6)return;h=3;len=(buffer[1]<<8)|buffer[2]}else{buffer=buffer.slice(1);continue}let total=h+len+3;if(!len||total>8192){buffer=buffer.slice(1);continue}if(buffer.length<total)return;let p=buffer.slice(0,total);buffer=buffer.slice(total);let payload=p.slice(h,h+len),crc=(p[total-3]<<8)|p[total-2];if(p[total-1]===3&&crc16(payload)===crc)parseValues(payload)}}
+function bleData(e){receive(new Uint8Array(e.target.value.buffer,e.target.value.byteOffset,e.target.value.byteLength))}
+async function sendGetValues(){const p=packet(new Uint8Array([4]));if(transport==="ble"&&writeChar){if(writeChar.properties.write)await writeChar.writeValueWithResponse(p);else if(writeChar.properties.writeWithoutResponse)await writeChar.writeValueWithoutResponse(p);else throw Error("UART RX characteristic is not writable")}else if(transport==="usb"&&writer)await writer.write(p)}
+async function connectBle(){
+  if(!navigator.bluetooth){
+    $("bleInfo").textContent="Web Bluetooth is unavailable here. Use desktop Chrome/Edge over HTTPS.";
+    return;
+  }
+  try {
+    $("connectBle").disabled=true;
+    status("CONNECTING");
+    try{ if(device&&device.gatt&&device.gatt.connected) device.gatt.disconnect(); }catch(_){}
+    $("bleInfo").textContent="Choose your VESC BLE adapter…";
+    device=await navigator.bluetooth.requestDevice({
+      acceptAllDevices:true,
+      optionalServices:BLE_PROFILES.map(p=>p.service)
+    });
+    device.addEventListener("gattserverdisconnected",()=>{
+      server=null;resetLink("bleInfo","BLE device disconnected.");
+    });
+    const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+    let lastErr=null;server=null;
+    for(let i=1;i<=3&&!server;i++){
+      try{
+        $("bleInfo").textContent="Connecting to "+(device.name||"adapter")+" (attempt "+i+"/3)…";
+        server=await Promise.race([device.gatt.connect(),new Promise((_,rej)=>setTimeout(()=>rej(new Error("Connection timed out")),12000))]);
+      }catch(e){
+        lastErr=e;
+        try{device.gatt.disconnect()}catch(_){}
+        await sleep(1200);
+      }
+    }
+    if(!server) throw new Error("Could not open a GATT connection to "+(device.name||"the selected device")+" ("+(lastErr&&lastErr.message)+"). Make sure nothing else (VESC Tool, the adapter's phone app, another browser tab) is connected to it, power-cycle the adapter, and confirm you picked the right device.");
+    let svc=null,prof=null;
+    for(const p of BLE_PROFILES){
+      try{svc=await server.getPrimaryService(p.service);prof=p;break}catch(_){}
+    }
+    if(!svc) throw new Error("None of the known BLE UART services were found (Nordic UART, FFE0, FFF0, FFE5, ISSC). This adapter may use a different service, or may not forward VESC UART packets. Inspect it with nRF Connect to see its service UUIDs.");
+    let chars=await svc.getCharacteristics();
+    const canNotify=c=>c.properties.notify||c.properties.indicate;
+    const canWrite=c=>c.properties.write||c.properties.writeWithoutResponse;
+    notifyChar=(prof.tx&&chars.find(c=>c.uuid===prof.tx))||chars.find(canNotify);
+    writeChar=(prof.rx&&chars.find(c=>c.uuid===prof.rx))||chars.find(c=>canWrite(c)&&c!==notifyChar)||chars.find(canWrite);
+    if(!notifyChar||!writeChar) throw new Error(prof.name+" service found, but no notify and write characteristics were found.");
+    await notifyChar.startNotifications();
+    notifyChar.addEventListener("characteristicvaluechanged",bleData);
+    transport="ble"; connected=true; demo=false;
+    status("CONNECTED",true);
+    $("bleInfo").textContent="BLE connected to "+(device.name||"adapter")+" via "+prof.name+". Requesting VESC telemetry…";
+    lastReq=0;
+    setNotice("BLE CONNECTED · VERIFYING VESC DATA");
+  } catch(e) {
+    connected=false; transport="";
+    status("CONNECTION ERROR",false,true);
+    $("bleInfo").textContent=(e.name==="NotFoundError"?"No device selected.":(e.message||"Could not connect"));
+    try { if(server&&server.connected) server.disconnect(); } catch(_){}
+  } finally {
+    $("connectBle").disabled=false;
+  }
+}
+async function connectUsb(){if(!navigator.serial){$("usbInfo").textContent="Web Serial unsupported. Use desktop Chrome/Edge over HTTPS.";return}try{$("connectUsb").disabled=true;status("CONNECTING");port=await navigator.serial.requestPort();await port.open({baudRate:115200});writer=port.writable.getWriter();transport="usb";connected=true;demo=false;status("CONNECTED",true);$("usbInfo").textContent="Serial port open; waiting for VESC telemetry.";lastReq=0;readSerial()}catch(e){status("CONNECTION ERROR",false,true);$("usbInfo").textContent=`${e.name}: ${e.message}`}finally{$("connectUsb").disabled=false}}
+async function readSerial(){try{reader=port.readable.getReader();while(true){const {value,done}=await reader.read();if(done)break;if(value)receive(value)}}catch(e){$("usbInfo").textContent="Serial read error: "+e.message}finally{try{reader&&reader.releaseLock()}catch(_){}}}
+window.addEventListener("pagehide",()=>{try{if(device&&device.gatt&&device.gatt.connected)device.gatt.disconnect()}catch(_){}});
+
+function resetLink(msgId,msg){connected=false;transport="";writeChar=notifyChar=null;buffer=new Uint8Array(0);lastReply=0;status("DISCONNECTED");if(msgId)$(msgId).textContent=msg;setNotice("DISCONNECTED · NO LIVE TELEMETRY")}
+async function disconnectAll(){
+  try{if(notifyChar){notifyChar.removeEventListener("characteristicvaluechanged",bleData);try{await notifyChar.stopNotifications()}catch(_){}}}catch(_){}
+  try{if(device&&device.gatt&&device.gatt.connected)device.gatt.disconnect()}catch(_){}
+  server=null;
+  try{if(reader){await reader.cancel()}}catch(_){}
+  try{if(writer){writer.releaseLock();writer=null}}catch(_){}
+  try{if(port){await port.close();port=null}}catch(_){}
+  resetLink("bleInfo","Disconnected. Tap CONNECT to reconnect.");$("usbInfo").textContent="Desktop Chrome/Edge, compatible adapter";
+}
+$("disconnectBtn").onclick=disconnectAll;$("disconnectTop").onclick=disconnectAll;
+const KEYS=["wheelDiameter","polePairs","gearRatio","seriesCells","gaugeMax","packWh","ctrlMult"];
+function saveSettings(){try{localStorage.setItem("vescDash",JSON.stringify(Object.fromEntries(KEYS.map(k=>[k,$(k).value]))))}catch(_){}}
+function loadSettings(){try{const o=JSON.parse(localStorage.getItem("vescDash")||"{}");KEYS.forEach(k=>{if(o[k]!==undefined&&$(k))$(k).value=o[k]})}catch(_){}}
+loadSettings();KEYS.forEach(k=>$(k).addEventListener("change",saveSettings));
+$("calibrate").onclick=()=>{
+  const m=s=>$("calInfo").textContent=s,v=vescSpeed(),g=gpsKmh;
+  if(!gpsOn||!Number.isFinite(g))return m("Turn GPS speed ON and wait until it shows a speed.");
+  if(!connected||demo||!Number.isFinite(v))return m("Connect to the VESC first (demo mode off).");
+  if(g<8||v<8)return m("Ride at a steady 20+ km/h so both speeds read above 8, then try again.");
+  const r=settings().ratio*v/g;$("gearRatio").value=r.toFixed(3);saveSettings();
+  m("Gear ratio set to "+r.toFixed(3)+" (VESC read "+v.toFixed(1)+", GPS "+g.toFixed(1)+" km/h). Ride again to verify.");
+};
+$("connectBle").onclick=connectBle;$("connectUsb").onclick=connectUsb;
+$("demoToggle").onclick=()=>{demo=!demo;$("demoToggle").textContent=demo?"ON":"OFF";if(demo){phase=0;phaseStart=performance.now();setNotice("DEMO DATA · NOT REAL TELEMETRY")}else setNotice(connected?"LIVE MODE · WAITING FOR DATA":"DEMO OFF · NO LIVE DATA")};
+$("unitToggle").onclick=()=>{unit=unit==="kmh"?"mph":"kmh";$("unitToggle").textContent=unit==="kmh"?"KM/H":"MPH";$("maxUnitLabel")&&($("maxUnitLabel").textContent=unit==="kmh"?"km/h":"mph")};
+$("speedSource").onclick=()=>{source=source==="vesc"?"gps":"vesc";$("speedSource").textContent=source.toUpperCase()};
+$("tripReset").onclick=()=>{trip=0};
+$("gpsToggle").onclick=()=>{if(gpsOn){gpsOn=false;if(gpsWatch!==null)navigator.geolocation.clearWatch(gpsWatch);gpsWatch=null;gpsKmh=null;$("gpsInfo").textContent="GPS disabled";$("gpsToggle").textContent="OFF";return}if(!navigator.geolocation){$("gpsInfo").textContent="Geolocation unsupported";return}gpsOn=true;$("gpsToggle").textContent="ON";$("gpsInfo").textContent="Waiting for location permission";gpsWatch=navigator.geolocation.watchPosition(p=>{window.onGpsFix&&window.onGpsFix(p);gpsKmh=Number.isFinite(p.coords.speed)&&p.coords.speed>=0?p.coords.speed*3.6:null;$("gpsInfo").textContent=gpsKmh===null?"Location available; speed not reported":"GPS speed active"},e=>{$("gpsInfo").textContent=({1:"Permission denied",2:"Location unavailable",3:"Location timed out"})[e.code]||"GPS error";gpsOn=false;$("gpsToggle").textContent="OFF"},{enableHighAccuracy:true,maximumAge:1000,timeout:15000})};
+$("wakeToggle").onclick=async()=>{if(!wakeOn){if(!navigator.wakeLock){$("wakeInfo").textContent="Wake Lock unsupported";return}try{wakeLock=await navigator.wakeLock.request("screen");wakeOn=true;$("wakeToggle").textContent="ON";$("wakeInfo").textContent="Screen wake lock active"}catch(e){$("wakeInfo").textContent=e.message}}else{try{await wakeLock.release()}catch(_){}wakeLock=null;wakeOn=false;$("wakeToggle").textContent="OFF";$("wakeInfo").textContent="Screen may sleep normally"}};
+document.addEventListener("visibilitychange",async()=>{if(document.visibilityState==="visible"&&wakeOn&&navigator.wakeLock){try{wakeLock=await navigator.wakeLock.request("screen")}catch(_){}}});
+function socFromVoltage(v){
+  const c=settings().cells;if(!Number.isFinite(v)||!(c>0))return null;
+  const x=v/c,pts=[[3.0,0],[3.3,3],[3.5,10],[3.6,20],[3.7,35],[3.8,50],[3.9,65],[4.0,80],[4.1,90],[4.2,100]];
+  if(x<=pts[0][0])return 0;if(x>=pts[pts.length-1][0])return 100;
+  for(let i=1;i<pts.length;i++){if(x<=pts[i][0]){const[a,b]=pts[i-1],[c2,d]=pts[i];return b+(d-b)*(x-a)/(c2-a)}}
+  return null}
+function fmtPower(w){if(!Number.isFinite(w))return"-- kW";return Math.abs(w)<1000?Math.round(w)+" W":(w/1000).toFixed(2)+" kW"}
+function render(){let s=disp(kmh()),gmax=settings().max*(unit==="mph"?.621371:1);$("speed").textContent=s===null?"--":Math.round(s);$("arc").style.strokeDasharray=s===null?"0 785":`${Math.max(0,Math.min(1,s/gmax))*589} 785`;let gs=disp(gpsKmh);$("gpsSpeed").textContent=gs===null?"--":Math.round(gs);$("gpsUnit").textContent=unit==="mph"?"MPH":"KM/H";$("units").textContent=unit==="mph"?"MPH":"KM/H";$("trip").textContent=(unit==="mph"?trip*.621371:trip).toFixed(1);$("tripUnit").textContent=unit==="mph"?"mi":"km";$("duty").textContent=t.duty===null?"--":Math.round(t.duty*100)+"%";$("fet").textContent=t.fet===null?"--°C":Math.round(t.fet)+"°C";let est=t.voltage===null?null:socFromVoltage(t.voltage);let pct=t.battery??(demo?84:est);$("battery").textContent=pct===null?"--%":(t.battery===null&&!demo?"~":"")+Math.round(pct)+"%";$("bar").style.width=pct===null?"0%":Math.max(0,Math.min(100,pct))+"%";$("voltage").textContent=t.voltage===null?"-- V":fmt(t.voltage)+" V";$("power").textContent=t.voltage===null||t.inputCurrent===null?"-- kW":fmtPower(t.voltage*t.inputCurrent*(Number($("ctrlMult").value)||1));$("inputCurrent").textContent=t.inputCurrent===null?"-- A input":fmt(t.inputCurrent*(Number($("ctrlMult").value)||1))+" A input";$("motorTemp").textContent=t.motor===null?"--°C":Math.round(t.motor)+"°C";$("motorCurrent").textContent=t.motorCurrent===null?"-- A motor":fmt(t.motorCurrent)+" A motor";$("packVoltage").textContent=t.voltage===null?"-- V":fmt(t.voltage,2)+" V";$("batteryCurrent").textContent=t.inputCurrent===null?"-- A":fmt(t.inputCurrent*(Number($("ctrlMult").value)||1))+" A";let per=t.voltage===null?null:socFromVoltage(t.voltage);$("estimate").textContent=t.battery!==null?Math.round(t.battery)+"% reported":demo?"~84% demo":per===null?"Unavailable":"~"+Math.round(Math.max(0,Math.min(100,per)))+"% estimate";$("batteryNote").textContent=demo?"Simulated voltage":connected?"Controller-reported pack voltage":"No live battery data";$("whUsed").textContent=Number.isFinite(t.wh)?t.wh.toFixed(1)+" Wh":"-- Wh";$("erpm").textContent=Number.isFinite(t.rpm)?String(Math.round(t.rpm)):"--";$("faultInfo").textContent="fault: "+(Number.isFinite(t.fault)?(t.fault===0?"none":"code "+t.fault):"--");$("disconnectBtn").disabled=!connected;$("disconnectTop").classList.toggle("hidden",!connected);$("source").textContent=demo?"DEMO":connected?transport.toUpperCase():"OFFLINE";$("speedCaption").textContent=demo?"SIMULATED SPEED":source==="gps"?"GPS SPEED SOURCE":vescSpeed()===null?"CHECK SPEED CALIBRATION":"VESC RPM · CALCULATED";if(demo){$("notice").textContent="DEMO DATA · NOT REAL TELEMETRY"}else if(connected&&lastReply){$("notice").textContent="LIVE VESC DATA · LAST REPLY "+Math.max(0,Math.round((Date.now()-lastReply)/1000))+"S AGO"}else $("notice").textContent="NO LIVE TELEMETRY · CHECK CONNECTION"}
+let lastTick=performance.now();
+function loop(now){let dt=Math.min(.1,(now-lastTick)/1000);lastTick=now;if(demo){let p=phases[phase],f=Math.min(1,(now-phaseStart)/p.d),e=f*f*(3-2*f);demoSpeed=p.a+(p.b-p.a)*e;if(f>=1){phase=(phase+1)%phases.length;phaseStart=now}t={voltage:72,inputCurrent:demoSpeed*.75,motorCurrent:demoSpeed*1.2,duty:Math.min(.95,demoSpeed/100),rpm:null,fet:32+demoSpeed*.25,motor:32+demoSpeed*.32,battery:84}}let v=kmh();if(Number.isFinite(v)&&v>0)trip+=v/3600*dt;if(connected&&transport&&now-lastReq>150&&!requestInFlight){lastReq=now;requestInFlight=true;sendGetValues().catch(e=>{let id=transport==="ble"?"bleInfo":"usbInfo";$(id).textContent="VESC request error: "+e.message}).finally(()=>{requestInFlight=false})}if(!demo&&connected&&lastReply&&Date.now()-lastReply>4000)status("NO TELEMETRY",false,true);render();requestAnimationFrame(loop)}
+render();requestAnimationFrame(loop);
+
+</script>
+<script>
+"use strict";
+(()=>{
+const LS_TRIPS="vescDashTrips",LS_ACTIVE="vescDashActive";
+const D=km=>unit==="mph"?km*0.621371:km,DU=()=>unit==="mph"?"mi":"km";
+const mult=()=>Math.max(1,Number($("ctrlMult").value)||1);
+const hav=(a,b)=>{const R=6371,r=Math.PI/180,dLa=(b[0]-a[0])*r,dLo=(b[1]-a[1])*r,x=Math.sin(dLa/2)**2+Math.cos(a[0]*r)*Math.cos(b[0]*r)*Math.sin(dLo/2)**2;return 2*R*Math.asin(Math.sqrt(x))};
+const fmtDur=ms=>{const s=Math.max(0,Math.round(ms/1000)),h=Math.floor(s/3600),m=Math.floor(s%3600/60),r=s%60,p=n=>String(n).padStart(2,"0");return h?h+":"+p(m)+":"+p(r):m+":"+p(r)};
+let trips=[],trip=null,reviewing=null,follow=true,noteTimer=null;
+const live={pts:[],cur:null,last:null,fixAt:0,acc:999};
+let odoKm=0,odoWh=0,samples=[{km:0,wh:0}],socEma=null;
+let map=null,liveLine=null,rider=null,reviewLayer=null,firstFix=true,lastPersist=0;
+
+try{trips=JSON.parse(localStorage.getItem(LS_TRIPS)||"[]");if(!Array.isArray(trips))trips=[]}catch(_){trips=[]}
+try{const a=JSON.parse(localStorage.getItem(LS_ACTIVE)||"null");if(a&&a.id&&Array.isArray(a.pts))trip=a}catch(_){}
+function saveTrips(){try{localStorage.setItem(LS_TRIPS,JSON.stringify(trips));return true}catch(e){note("Storage full: delete old trips or export them as GPX.");return false}}
+function persistActive(){try{if(trip)localStorage.setItem(LS_ACTIVE,JSON.stringify(trip));else localStorage.removeItem(LS_ACTIVE)}catch(_){}}
+function note(s){$("mapInfo2").textContent=s;clearTimeout(noteTimer);noteTimer=setTimeout(()=>$("mapInfo2").textContent="",6000)}
+
+/* ---------- distance / energy / range ---------- */
+function addDist(d){if(!(d>0))return;odoKm+=d;if(trip)trip.km+=d;const l=samples[samples.length-1];if(odoKm-l.km>=0.05){samples.push({km:odoKm,wh:odoWh});while(samples.length>2&&odoKm-samples[1].km>=8)samples.shift()}}
+function addWh(w){odoWh+=w;if(trip)trip.wh+=w}
+function consumption(){
+  // Use the overall session average, not a short rolling window that can
+  // produce absurd range figures from a few seconds of riding.
+  if(odoKm<0.5||odoWh<=0)return null;
+  const c=odoWh/odoKm;
+  return Number.isFinite(c)&&c>=1&&c<=2000?c:null;
+}
+function range(){
+  const cap=Number($("packWh").value);
+  if(!(cap>0))return{note:"set battery Wh in Settings"};
+  if(socEma===null)return{note:"connect the VESC"};
+  const c=consumption();
+  if(c===null)return{note:"need 0.5+ km and valid energy data"};
+  return{km:cap*socEma/100/c,cons:c,note:"based on average · to 0% estimate"};
+}
+
+/* ---------- GPS ---------- */
+window.onGpsFix=function(p){
+  const c=p&&p.coords;if(!c||!Number.isFinite(c.latitude)||!Number.isFinite(c.longitude))return;
+  const acc=Number.isFinite(c.accuracy)?c.accuracy:999,pt=[c.latitude,c.longitude];
+  live.fixAt=Date.now();live.acc=acc;live.cur=pt;
+  if(acc<=40){
+    if(!live.last)addPoint(pt);
+    else{
+      const d=hav(live.last,pt);
+      if(d>=0.5)addPoint(pt);
+      else if(d>=Math.max(0.005,acc/2000)){addDist(d);addPoint(pt)}
+    }
+  }
+  updateRider();
+};
+function addPoint(pt){
+  live.last=pt;live.pts.push(pt);if(live.pts.length>6000)live.pts=live.pts.filter((_,i)=>i%2===0);
+  if(trip){trip.pts.push(pt);if(trip.pts.length>4000)trip.pts=trip.pts.filter((_,i)=>i%2===0)}
+  if(liveLine&&!reviewing)liveLine.setLatLngs(live.pts);
+}
+
+/* ---------- 1 s tick ---------- */
+let lastTick=performance.now();
+setInterval(()=>{
+  const now=performance.now(),dt=Math.min(3,(now-lastTick)/1000);lastTick=now;
+  const liveData=!demo&&connected&&lastReply&&Date.now()-lastReply<3000&&Number.isFinite(t.voltage);
+  if(liveData){const s=socFromVoltage(t.voltage);if(s!==null)socEma=socEma===null?s:socEma+(s-socEma)*Math.min(1,dt*0.04)}
+  let spd=demo?null:kmh();if(!Number.isFinite(spd))spd=(!demo&&Number.isFinite(gpsKmh))?gpsKmh:null;
+  const gpsFresh=Date.now()-live.fixAt<5000;
+  if(!demo&&!gpsFresh&&Number.isFinite(spd)&&spd>1)addDist(spd*dt/3600);
+  const moving=Number.isFinite(spd)&&spd>2;
+  if(moving&&liveData&&Number.isFinite(t.inputCurrent))addWh(t.voltage*t.inputCurrent*mult()*dt/3600);
+  if(trip&&moving){trip.movS+=dt;if(spd>trip.maxKmh)trip.maxKmh=spd}
+  if(trip&&Date.now()-lastPersist>15000){lastPersist=Date.now();persistActive()}
+  renderMap();
+},1000);
+window.addEventListener("pagehide",persistActive);
+
+/* ---------- trip buttons ---------- */
+$("tripStart").onclick=()=>{
+  if(trip)return;
+  if(demo){note("Turn demo mode off in Settings to record a real trip.");return}
+  if(!gpsOn)$("gpsToggle").click();
+  exitReview();
+  trip={id:Date.now(),start:Date.now(),km:0,wh:0,movS:0,maxKmh:0,pts:[],pct0:socEma===null?null:Math.round(socEma)};
+  if(live.cur&&live.acc<=40)trip.pts.push(live.cur);
+  persistActive();renderMap();note("Trip recording. GPS is on.");
+};
+$("tripEnd").onclick=()=>{
+  if(!trip)return;
+  const tr=trip;trip=null;persistActive();
+  tr.end=Date.now();tr.pct1=socEma===null?null:Math.round(socEma);
+  if(tr.km<0.05){renderMap();note("Trip too short, not saved.");return}
+  tr.pts=tr.pts.map(p=>[+p[0].toFixed(5),+p[1].toFixed(5)]);
+  trips.unshift(tr);if(trips.length>200)trips.length=200;
+  const ok=saveTrips();renderTrips();renderMap();if(ok)note("Trip saved. Find it under TRIPS.");
+};
+
+/* ---------- map ---------- */
+function ensureMap(){
+  if(map||!window.L)return;
+  map=L.map("map",{zoomControl:false,attributionControl:true}).setView([20,0],2);
+  L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?key=cb1_4waq_1_b63fa21f84046b4f2df09576",{maxZoom:19,subdomains:"abcd",attribution:"© OpenStreetMap contributors © CARTO"}).addTo(map);
+  liveLine=L.polyline(live.pts,{color:"#35f28a",weight:4,opacity:.9}).addTo(map);
+  map.on("dragstart",()=>{follow=false;$("followBtn").textContent="FOLLOW OFF"});
+  $("map").classList.remove("hidden");$("mapFallback").classList.add("hidden");
+  updateRider();
+}
+function updateRider(){
+  if(!live.cur)return;
+  if(map){
+    if(!rider)rider=L.circleMarker(live.cur,{radius:8,color:"#fff",weight:2,fillColor:"#35f28a",fillOpacity:1}).addTo(map);
+    else rider.setLatLng(live.cur);
+    if(!reviewing&&(follow||firstFix)){map.setView(live.cur,firstFix?16:Math.max(map.getZoom(),15),{animate:false});firstFix=false}
+  }else drawFallback();
+}
+function drawFallback(){
+  const cv=$("mapFallback"),r=window.devicePixelRatio||1,w=cv.clientWidth,h=cv.clientHeight;if(!w||!h)return;
+  cv.width=w*r;cv.height=h*r;const g=cv.getContext("2d");g.scale(r,r);g.clearRect(0,0,w,h);
+  const pts=reviewing?reviewing.pts:live.pts;
+  if(pts.length<1){g.fillStyle="#666";g.font="12px system-ui";g.textAlign="center";g.fillText("No track yet. Turn GPS on and start moving.",w/2,h/2);return}
+  let a=90,b=-90,c=180,d=-180;for(const p of pts){a=Math.min(a,p[0]);b=Math.max(b,p[0]);c=Math.min(c,p[1]);d=Math.max(d,p[1])}
+  const k=Math.cos((a+b)/2*Math.PI/180),sx=Math.max((d-c)*k,1e-5),sy=Math.max(b-a,1e-5),pad=46,sc=Math.min((w-2*pad)/sx,(h-2*pad)/sy);
+  const X=p=>(w-sx*sc)/2+(p[1]-c)*k*sc,Y=p=>(h+sy*sc)/2-(p[0]-a)*sc;
+  g.strokeStyle=reviewing?"#ffd24a":"#35f28a";g.lineWidth=3;g.lineJoin="round";g.beginPath();pts.forEach((p,i)=>i?g.lineTo(X(p),Y(p)):g.moveTo(X(p),Y(p)));g.stroke();
+  const e=pts[pts.length-1];g.fillStyle="#fff";g.beginPath();g.arc(X(e),Y(e),5,0,7);g.fill();
+}
+function drawReview(){
+  const tr=reviewing;if(!tr)return;
+  $("reviewPill").classList.remove("hidden");
+  if(!map){drawFallback();return}
+  if(reviewLayer)map.removeLayer(reviewLayer);
+  if(liveLine)map.removeLayer(liveLine);
+  reviewLayer=L.layerGroup().addTo(map);
+  if(tr.pts.length){
+    const pl=L.polyline(tr.pts,{color:"#ffd24a",weight:4}).addTo(reviewLayer);
+    L.circleMarker(tr.pts[0],{radius:7,color:"#fff",weight:2,fillColor:"#35f28a",fillOpacity:1}).addTo(reviewLayer);
+    L.circleMarker(tr.pts[tr.pts.length-1],{radius:7,color:"#fff",weight:2,fillColor:"#ff6961",fillOpacity:1}).addTo(reviewLayer);
+    map.fitBounds(pl.getBounds(),{padding:[24,24]});
+  }
+}
+function exitReview(){
+  if(!reviewing)return;reviewing=null;$("reviewPill").classList.add("hidden");
+  if(map){if(reviewLayer){map.removeLayer(reviewLayer);reviewLayer=null}liveLine.setLatLngs(live.pts);liveLine.addTo(map);if(live.cur)map.setView(live.cur,16,{animate:false})}else drawFallback();
+}
+$("reviewPill").onclick=exitReview;
+$("followBtn").onclick=()=>{follow=!follow;$("followBtn").textContent=follow?"FOLLOW ON":"FOLLOW OFF";if(follow&&live.cur&&map&&!reviewing)map.setView(live.cur,Math.max(map.getZoom(),15))};
+$("mapGps").onclick=()=>$("gpsToggle").click();
+function onMapShown(){
+  if(window.L){ensureMap();if(map){map.invalidateSize();if(reviewing)drawReview()}}
+  else{$("map").classList.add("hidden");$("mapFallback").classList.remove("hidden");drawFallback()}
+}
+document.querySelectorAll("nav button").forEach(b=>b.addEventListener("click",()=>{if(b.dataset.screen==="mapScreen")setTimeout(onMapShown,60)}));
+const lj=document.getElementById("leafletJs");if(lj)lj.addEventListener("load",()=>{if(!$("mapScreen").classList.contains("hidden"))onMapShown()});
+window.addEventListener("resize",()=>{if(!$("mapScreen").classList.contains("hidden"))onMapShown()});
+
+/* ---------- map tab text ---------- */
+function renderMap(){
+  const rec=!!trip;
+  $("recMark").classList.toggle("hidden",!rec);
+  $("tripStart").disabled=rec;$("tripEnd").disabled=!rec;
+  $("mapGps").textContent=gpsOn?"GPS ON":"GPS OFF";
+  $("mapGps").classList.toggle("warn",!gpsOn);
+  const km=rec?trip.km:odoKm;
+  $("mDistLbl").textContent=rec?"TRIP DISTANCE":"SESSION DISTANCE";
+  $("mDist").textContent=D(km).toFixed(2)+" "+DU();
+  $("mTime").textContent=rec?"recording · "+fmtDur(Date.now()-trip.start):"not recording";
+  const r=range();
+  $("mRange").textContent=r.km!==undefined?"~"+Math.round(D(r.km))+" "+DU():"--";
+  $("mRangeNote").textContent=r.note;
+  const cons=r.cons!==undefined?r.cons:consumption();
+  $("mCons").textContent=cons?Math.round(unit==="mph"?cons/0.621371:cons)+" Wh/"+DU():"--";
+  if(rec&&trip.movS>20){$("mSpeed").textContent=Math.round(D(trip.km/(trip.movS/3600)))+" / "+Math.round(D(trip.maxKmh));}else $("mSpeed").textContent="--";
+  $("mapNote").textContent=reviewing?"Viewing a saved trip":(!gpsOn?"GPS is off. Turn it on to see your position.":(Date.now()-live.fixAt>8000?"Waiting for a GPS fix…":"GPS accuracy ±"+Math.round(live.acc)+" m"));
+  if(!window.L&&!$("mapScreen").classList.contains("hidden"))drawFallback();
+}
+
+/* ---------- trips tab ---------- */
+function renderTrips(){
+  const tot=trips.reduce((s,x)=>s+x.km,0);
+  $("tripsSum").textContent=trips.length?trips.length+" trip"+(trips.length>1?"s":"")+" · "+D(tot).toFixed(1)+" "+DU()+" total":"No trips yet. Start one from the MAP tab.";
+  $("tripList").innerHTML=trips.map(x=>{
+    const dur=x.end-x.start,avg=x.movS>30?x.km/(x.movS/3600):null,wpk=x.km>0.3&&x.wh>0?x.wh/x.km:null;
+    const when=new Date(x.start).toLocaleString([], {dateStyle:"medium",timeStyle:"short"});
+    const bat=x.pct0!=null&&x.pct1!=null?" · battery ~"+x.pct0+"% → ~"+x.pct1+"%":"";
+    return '<div class="trip"><h3>'+when+'</h3><div class="meta"><div>DISTANCE<b>'+D(x.km).toFixed(1)+' '+DU()+'</b></div><div>TIME<b>'+fmtDur(dur)+'</b></div><div>AVG<b>'+(avg?Math.round(D(avg)):'--')+'</b></div><div>MAX<b>'+Math.round(D(x.maxKmh))+'</b></div></div>'
+      +'<div class="tsub">'+(wpk?Math.round(unit==="mph"?wpk/0.621371:wpk)+' Wh/'+DU():'consumption n/a')+bat+'</div>'
+      +'<div class="acts"><button class="btn acc" data-act="view" data-id="'+x.id+'">VIEW MAP</button><button class="btn" data-act="gpx" data-id="'+x.id+'">GPX</button><button class="btn" data-act="del" data-id="'+x.id+'">DELETE</button></div></div>';
+  }).join("");
+}
+let delArm=null;
+$("tripList").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-act]");if(!b)return;
+  const id=Number(b.dataset.id),tr=trips.find(x=>x.id===id);if(!tr)return;
+  if(b.dataset.act==="view"){reviewing=tr;showScreen("mapScreen");setTimeout(onMapShown,60);setTimeout(()=>{if(!window.L)drawFallback()},120);$("reviewPill").classList.remove("hidden")}
+  else if(b.dataset.act==="gpx")exportGpx(tr);
+  else if(b.dataset.act==="del"){
+    if(delArm===id){trips=trips.filter(x=>x.id!==id);saveTrips();delArm=null;renderTrips()}
+    else{delArm=id;b.textContent="TAP AGAIN";setTimeout(()=>{if(delArm===id){delArm=null;b.textContent="DELETE"}},3000)}
+  }
+});
+function exportGpx(tr){
+  const pts=tr.pts.map(p=>'<trkpt lat="'+p[0]+'" lon="'+p[1]+'"/>').join("");
+  const x='<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1" creator="VESC Dash" xmlns="http://www.topografix.com/GPX/1/1"><trk><name>'+new Date(tr.start).toISOString()+'</name><trkseg>'+pts+'</trkseg></trk></gpx>';
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([x],{type:"application/gpx+xml"}));
+  a.download="trip-"+new Date(tr.start).toISOString().slice(0,16).replace(/[:T]/g,"-")+".gpx";document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);
+}
+document.querySelectorAll("nav button").forEach(b=>b.addEventListener("click",()=>{if(b.dataset.screen==="tripsScreen")renderTrips()}));
+renderTrips();renderMap();
+})();
+
+</script></body></html>
