@@ -1,559 +1,307 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#050505"><meta name="apple-mobile-web-app-capable" content="yes">
-<title>VESC Dash</title><style>
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-:root{color-scheme:dark;--bg:#050505;--card:#101010;--line:#252525;--mut:#8a8a8a;--acc:#35f28a;--bad:#ff6961}
-html,body{height:100%}
-body{margin:0;background:var(--bg);color:#f5f5f5;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
-button,input,select{font-family:inherit}
-.app{max-width:560px;height:100dvh;margin:auto;padding:max(14px,env(safe-area-inset-top)) 16px max(10px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:10px}
-header{display:flex;justify-content:space-between;align-items:center;gap:10px;flex:none}
-.brand{font-size:18px;font-weight:900;letter-spacing:1px}.brand span{color:var(--mut);font-weight:400}
-.hright{display:flex;align-items:center;gap:10px;min-width:0}
-.status{display:flex;align-items:center;gap:7px;color:#aaa;font-size:10px;letter-spacing:1px;white-space:nowrap}
-.status i{width:8px;height:8px;border-radius:50%;background:#555;flex:none}.status i.on{background:var(--acc);box-shadow:0 0 8px var(--acc)}
-.pill{padding:6px 10px;border:1px solid #444;border-radius:99px;background:#181818;color:#eee;font-size:9px;font-weight:700;letter-spacing:1px}
-.screen{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none}.screen::-webkit-scrollbar{display:none}
-.hidden{display:none!important}
-#dashboard{display:flex;flex-direction:column;gap:10px}
-.gauge-wrap{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
-.eyebrow{color:var(--mut);font-size:10px;letter-spacing:2px;text-align:center}
-.gauge{position:relative;width:min(82vw,340px,46dvh);aspect-ratio:1}
-.gauge svg{width:100%;height:100%;transform:rotate(-225deg)}
-circle{fill:none;stroke-width:8}
-.track{stroke:#222;stroke-dasharray:589 196;stroke-linecap:round}
-.arc{stroke:var(--acc);stroke-dasharray:0 785;stroke-linecap:round;transition:stroke-dasharray .12s;filter:drop-shadow(0 0 6px rgba(53,242,138,.45))}
-.center{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;padding-bottom:6%}
-.center strong{font-size:clamp(60px,min(24vw,14dvh),112px);line-height:1;letter-spacing:-3px;font-variant-numeric:tabular-nums;font-weight:800}
-.center span{margin-top:6px;color:#aaa;font-size:12px;letter-spacing:4px}
-.caption{color:#666;font-size:9px;letter-spacing:2px;text-align:center;min-height:12px}
-.gpspill{display:inline-flex;align-items:baseline;gap:6px;padding:6px 14px;border:1px solid var(--line);border-radius:99px;background:var(--card);color:var(--mut);font-size:10px;letter-spacing:1.5px}
-.gpspill b{color:#fff;font-size:15px;letter-spacing:0;font-variant-numeric:tabular-nums}
-.tiles{display:flex;flex-direction:column;gap:8px;flex:none}
-.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px}
-.tile{min-width:0;padding:12px 11px;border:1px solid var(--line);border-radius:14px;background:var(--card);color:inherit;text-align:left;display:flex;flex-direction:column;gap:7px;font-size:inherit}
-button.tile{cursor:pointer}
-.tile>span{color:var(--mut);font-size:9px;letter-spacing:1.2px}
-.tile>strong{font-size:clamp(17px,5.2vw,23px);white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:700}
-.tile strong small{font-size:.55em;color:var(--mut);font-weight:400}
-.tile>small{color:var(--mut);font-size:10px;overflow-wrap:anywhere}
-.bar{height:4px;background:#2a2a2a;border-radius:4px;overflow:hidden}#bar{height:100%;width:0;background:var(--acc);transition:width .3s}
-.footer{text-align:center;color:#666;font-size:9px;letter-spacing:1.5px;padding:2px 0}
-h1{margin:6px 0 4px;font-size:30px;letter-spacing:-1px}h1 span{color:var(--mut);font-weight:400}
-p.sub{color:var(--mut);font-size:12px;line-height:1.5;margin:0 0 16px}
-.card{padding:16px;border:1px solid var(--line);border-radius:15px;background:var(--card)}
-.card>label,.card .lbl{display:block;color:var(--mut);font-size:9px;letter-spacing:1.2px;margin-bottom:8px}
-.card>strong{display:block;font-size:36px;font-variant-numeric:tabular-nums}
-.card>small{display:block;margin-top:6px;color:var(--mut);font-size:11px}
-.info{margin:10px 0;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--mut);font-size:11px;line-height:1.6}
-.group{border:1px solid var(--line);border-radius:15px;background:var(--card);padding:4px 16px;margin-bottom:12px}
-.group>h2{margin:14px 0 2px;font-size:10px;letter-spacing:1.5px;color:var(--mut);font-weight:600}
-.row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--line)}
-.row:last-child{border-bottom:0}
-.row b{display:block;font-size:13px}.row small{display:block;margin-top:5px;color:var(--mut);font-size:11px;line-height:1.4;overflow-wrap:anywhere}
-.row>div{min-width:0}
-.btn{padding:9px 13px;border:1px solid #444;border-radius:10px;background:#1c1c1c;color:#fff;font-size:10px;font-weight:700;letter-spacing:.5px;flex:none;cursor:pointer}
-.btn.acc{border-color:var(--acc);color:var(--acc)}
-.btn:disabled{opacity:.4}
-.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:14px 0}
-.formgrid label{display:flex;flex-direction:column;gap:6px;font-size:11px;color:#bbb}
-.formgrid input,.formgrid select{width:100%;min-width:0;padding:10px;border:1px solid #333;border-radius:9px;background:#0b0b0b;color:#fff;font-size:14px}
-nav{flex:none;display:grid;grid-template-columns:repeat(5,1fr);gap:5px;padding-top:2px}
-nav button{padding:12px 2px;border:1px solid var(--line);border-radius:12px;background:#0b0b0b;color:#777;font-size:10px;font-weight:700;letter-spacing:.5px}
-nav button.active{color:#fff;border-color:#666;background:#181818}
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>VESC BLE Dashboard</title><style>
+:root{color-scheme:dark;--bg:#090c11;--card:#151b25;--line:#293344;--muted:#91a0b4;--green:#72e0b2}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#f3f6fb;font:15px system-ui;overflow:hidden}header{height:56px;padding:16px;border-bottom:1px solid var(--line);font-weight:750}#track{display:flex;width:400vw;height:calc(100dvh - 82px);transition:.22s;touch-action:pan-y}.page{width:100vw;flex:0 0 100vw;overflow:auto;padding:16px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;min-width:0}.wide{grid-column:1/-1}.label{font-size:12px;color:var(--muted)}.val{font-size:26px;font-weight:750;margin-top:5px}.hero .val{font-size:42px;color:var(--green)}h2{font-size:21px;margin:5px 0 15px}button,input,select{background:#202a39;color:white;border:1px solid var(--line);border-radius:9px;padding:11px;font:inherit}button{cursor:pointer}button:disabled{opacity:.45;cursor:default}input,select{width:100%}.field{margin:12px 0}.field label{display:block;color:var(--muted);font-size:12px;margin-bottom:5px}.actions{display:flex;gap:8px}.actions button{flex:1}.notice{background:#302719;color:#f3d9a9;border:1px solid #5c4726;border-radius:12px;padding:12px;font-size:12px;line-height:1.5}.muted{font-size:12px;color:var(--muted);line-height:1.5}#nav{height:26px;display:flex;justify-content:center;gap:7px;align-items:center}.dot{height:6px;width:6px;border-radius:9px;background:#536075;cursor:pointer}.dot.active{width:20px;background:var(--green)}table{width:100%;font-size:13px;border-collapse:collapse}td{padding:7px 0;border-bottom:1px solid var(--line)}td:last-child{text-align:right}@media(min-width:700px){.page{padding:24px max(24px,calc((100vw - 760px)/2))}.grid{grid-template-columns:repeat(3,1fr)}}
 
-
-.leaflet-container{background:#0b0b0b;font-family:inherit}.leaflet-control-attribution{background:rgba(0,0,0,.6)!important;color:#888!important;font-size:9px}.leaflet-control-attribution a{color:#aaa!important}
-.maphead{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.mapbox{position:relative;height:min(44dvh,420px);min-height:220px;border:1px solid var(--line);border-radius:15px;overflow:hidden;background:#0b0b0b;margin-top:6px}
-#map,#mapFallback{width:100%;height:100%;display:block}
-.mapbtn{position:absolute;top:10px;z-index:1000;padding:7px 10px;border:1px solid #444;border-radius:99px;background:rgba(15,15,15,.85);color:#eee;font-size:9px;font-weight:700;letter-spacing:1px;cursor:pointer}
-.mapbtn.warn{border-color:var(--bad);color:var(--bad)}
-.btn.big{width:100%;padding:15px 10px;font-size:12px;letter-spacing:1px}
-.trip{border:1px solid var(--line);border-radius:14px;background:var(--card);padding:14px;margin-bottom:10px}
-.trip h3{margin:0 0 10px;font-size:13px}
-.trip .meta{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;color:var(--mut);font-size:9px;letter-spacing:1px}
-.trip .meta b{display:block;color:#fff;font-size:15px;letter-spacing:0;margin-top:5px;white-space:nowrap}
-.trip .tsub{margin-top:10px;color:var(--mut);font-size:11px}
-.trip .acts{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
-
-/* ride screen: flat stats, no boxes */
-#dashboard .tiles{gap:14px;padding-top:12px;border-top:1px solid #161616}
-#dashboard .tile{background:none;border:0;border-radius:0;padding:2px 4px;align-items:center;text-align:center;gap:5px}
-#dashboard .grid3 .tile+.tile{border-left:1px solid #1a1a1a}
-#dashboard .tile>span{font-size:9px;letter-spacing:1.5px;color:#6f6f6f}
-#dashboard .tile>strong{font-size:clamp(18px,5.4vw,26px);font-weight:700}
-#dashboard .tile>small{font-size:10px;color:#777}
-#dashboard .tile .bar{width:70%;height:3px}
-#dashboard button.tile{color:inherit}
-#dashboard button.tile:active{opacity:.6}
-@media(orientation:landscape) and (max-height:520px){
- .app{max-width:none;display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);column-gap:16px;row-gap:4px;padding:max(8px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
- header{grid-column:2;grid-row:1}
- .screen{grid-column:2;grid-row:2}
- nav{grid-column:1;grid-row:1/3;grid-template-columns:1fr;align-content:center;gap:6px;padding:0;width:80px}
- nav button{padding:12px 2px}
- h1{font-size:24px;margin:2px 0}
- #dashboard{flex-direction:row;align-items:center;gap:20px}
- #dashboard .gauge-wrap{flex:1 1 50%;min-width:0;gap:6px}
- #dashboard .tiles{flex:1 1 50%;min-width:0;justify-content:center;border-top:0;padding-top:0;gap:18px}
- .gauge{width:min(56dvh,250px)}
- .center strong{font-size:clamp(48px,min(18vw,17dvh),96px)}
- .mapbox{height:min(62dvh,300px);min-height:150px}
- #dashboard .tile>strong{font-size:clamp(16px,min(3vw,6.5dvh),24px)}
-}
-@media(max-height:680px) and (orientation:portrait){
- .gauge{width:min(74vw,300px,40dvh)}
- #dashboard .tiles{gap:10px;padding-top:8px}
- .app{gap:6px}
-}
-</style>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" media="print" onload="this.media='all'">
-<script async id="leafletJs" src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
-</head>
-<body><div class="app">
-<header><div class="brand">VESC <span>DASH</span></div>
-<div class="hright"><button class="pill hidden" id="disconnectTop">DISCONNECT</button><div class="status"><i id="dot"></i><span id="status">DISCONNECTED</span></div></div></header>
-
-<main id="dashboard" class="screen">
-<div class="gauge-wrap">
-<div class="eyebrow">TELEMETRY · <span id="source">DEMO</span><span id="recMark" class="hidden" style="color:var(--bad)"> · ● REC</span></div>
-<div class="gauge"><svg viewBox="0 0 300 300"><circle class="track" cx="150" cy="150" r="125"/><circle class="arc" id="arc" cx="150" cy="150" r="125"/></svg><div class="center"><strong id="speed">0</strong><span id="units">KM/H</span></div></div>
-<div class="caption" id="speedCaption">SIMULATED SPEED</div>
-<div class="gpspill">GPS <b id="gpsSpeed">--</b> <span id="gpsUnit">KM/H</span></div>
-</div>
-<div class="tiles">
-<div class="grid3">
-<button class="tile" id="tripReset"><span>TRIP · RESET</span><strong><b id="trip">0.0</b> <small id="tripUnit">km</small></strong></button>
-<div class="tile"><span>DUTY</span><strong id="duty">--%</strong></div>
-<div class="tile"><span>ESC TEMP</span><strong id="fet">--°C</strong></div>
-</div>
-<div class="grid3">
-<div class="tile"><span>BATTERY</span><strong id="battery">--%</strong><div class="bar"><div id="bar"></div></div><small id="voltage">-- V</small></div>
-<div class="tile"><span>POWER</span><strong id="power">-- W</strong><small id="inputCurrent">-- A input</small></div>
-<div class="tile"><span>MOTOR TEMP</span><strong id="motorTemp">--°C</strong><small id="motorCurrent">-- A motor</small></div>
-</div>
-<div class="footer" id="notice">DEMO DATA · NOT REAL TELEMETRY</div>
-</div>
-</main>
-
-<main id="batteryScreen" class="screen hidden"><h1>Battery <span>status</span></h1><p class="sub">Controller-reported values</p>
-<section class="card"><label>PACK VOLTAGE</label><strong id="packVoltage">-- V</strong><small id="batteryNote">No live battery data</small></section>
-<div class="grid2">
-<div class="tile"><span>INPUT CURRENT</span><strong id="batteryCurrent">-- A</strong></div>
-<div class="tile"><span>CHARGE ESTIMATE</span><strong id="estimate">--</strong></div>
-<div class="tile"><span>ENERGY USED</span><strong id="whUsed">-- Wh</strong><small>since controller power-on</small></div>
-<div class="tile"><span>ERPM / FAULT</span><strong id="erpm">--</strong><small id="faultInfo">fault: --</small></div>
-</div>
-<div class="info">Charge is estimated from pack voltage and the series cell count in Settings. Voltage sags under load, so it reads low while accelerating and recovers when you stop. A VESC cannot report individual cell voltages.</div>
-</main>
-
-<main id="mapScreen" class="screen hidden">
-<div class="maphead"><h1>Live <span>map</span></h1><button class="pill hidden" id="reviewPill">BACK TO LIVE</button></div>
-<div class="mapbox"><div id="map"></div><canvas id="mapFallback" class="hidden"></canvas>
-<button class="mapbtn" id="mapGps" style="left:10px">GPS OFF</button><button class="mapbtn" id="followBtn" style="right:10px">FOLLOW ON</button></div>
-<div class="caption" id="mapNote" style="margin-top:8px"></div>
-<div class="grid2">
-<div class="tile"><span id="mDistLbl">SESSION DISTANCE</span><strong id="mDist">0.00 km</strong><small id="mTime">not recording</small></div>
-<div class="tile"><span>RANGE LEFT</span><strong id="mRange">--</strong><small id="mRangeNote">estimate</small></div>
-<div class="tile"><span>CONSUMPTION</span><strong id="mCons">--</strong><small>recent riding</small></div>
-<div class="tile"><span>AVG / MAX SPEED</span><strong id="mSpeed">--</strong><small>this trip</small></div>
-</div>
-<div class="grid2"><button class="btn acc big" id="tripStart">START TRIP</button><button class="btn big" id="tripEnd" disabled>END TRIP</button></div>
-<div class="caption" id="mapInfo2" style="margin-top:8px;min-height:14px"></div>
-<div class="info">Range = battery capacity × charge left (estimated from pack voltage) ÷ your recent Wh per km, counting 0% at the voltage-curve floor. The bike may cut out earlier, and hard riding lowers the number. Set battery capacity in Settings. The map needs internet for tiles; the track still draws offline.</div>
-</main>
-<main id="tripsScreen" class="screen hidden"><h1>Saved <span>trips</span></h1><p class="sub" id="tripsSum">No trips yet.</p><div id="tripList"></div>
-<div class="info">Trips are stored in this browser on this device. Export a trip as GPX to keep a backup.</div></main>
-<main id="settings" class="screen hidden"><h1>App <span>settings</span></h1><p class="sub">Connection, calibration and display</p>
-<div class="group"><h2>CONNECTION</h2>
-<div class="row"><div><b>Bluetooth LE</b><small id="bleInfo">BLE UART adapter required</small></div><button class="btn acc" id="connectBle">CONNECT</button></div>
-<div class="row"><div><b>USB serial</b><small id="usbInfo">Desktop Chrome/Edge, compatible adapter</small></div><button class="btn acc" id="connectUsb">CONNECT</button></div>
-<div class="row"><div><b>Disconnect</b><small>Close the link cleanly so the adapter can be reused</small></div><button class="btn" id="disconnectBtn" disabled>DISCONNECT</button></div>
-</div>
-<div class="group"><h2>DISPLAY</h2>
-<div class="row"><div><b>Demo mode</b><small>Simulated data, not live telemetry</small></div><button class="btn" id="demoToggle">ON</button></div>
-<div class="row"><div><b>Speed units</b><small>Dashboard and trip</small></div><button class="btn" id="unitToggle">KM/H</button></div>
-<div class="row"><div><b>GPS speed</b><small id="gpsInfo">Uses browser location permission</small></div><button class="btn" id="gpsToggle">OFF</button></div>
-<div class="row"><div><b>Speed source</b><small>VESC RPM or GPS</small></div><button class="btn" id="speedSource">VESC</button></div>
-<div class="row"><div><b>Keep screen awake</b><small id="wakeInfo">Supported browsers only</small></div><button class="btn" id="wakeToggle">OFF</button></div>
-</div>
-<div class="group"><h2>CALIBRATION</h2>
-<div class="formgrid">
-<label>Wheel diameter (mm)<input id="wheelDiameter" type="number" value="650" min="50" max="1000"></label>
-<label>Motor pole pairs<input id="polePairs" type="number" value="7" min="1" max="50"></label>
-<label>Gear ratio<input id="gearRatio" type="number" value="1" min=".1" max="100" step="any"></label>
-<label>Gauge maximum<input id="gaugeMax" type="number" value="100" min="10" max="250"></label>
-<label>Battery capacity (Wh)<input id="packWh" type="number" min="0" step="any" placeholder="e.g. 1976"></label>
-<label>Controllers sharing load<select id="ctrlMult"><option value="1">1 (only the connected one)</option><option value="2" selected>2 (both motors)</option></select></label>
-<label style="grid-column:1/-1">Battery pack (series cells)<select id="seriesCells">
-<option value="12">12S · 44 V nominal</option><option value="13">13S · 48 V nominal</option><option value="14" selected>14S · 52 V nominal</option><option value="16">16S · 60 V nominal</option><option value="18">18S · 67 V nominal</option><option value="20">20S · 74 V nominal</option><option value="21">21S · 78 V nominal</option><option value="22">22S · 81 V nominal</option><option value="24">24S · 89 V nominal</option></select></label>
-</div>
-<div class="row"><div><b>Calibrate speed from GPS</b><small id="calInfo">Turn GPS on, ride at a steady 20+ km/h, then tap. Adjusts the gear ratio so VESC speed matches GPS.</small></div><button class="btn acc" id="calibrate">CALIBRATE</button></div>
-</div>
-<div class="info">Read-only dashboard. It does not send motor-control commands. VESC GET_VALUES layouts vary by firmware; verify readings against a known reference.</div>
-</main>
-<nav><button data-screen="dashboard" class="active">RIDE</button><button data-screen="batteryScreen">BATTERY</button><button data-screen="mapScreen">MAP</button><button data-screen="tripsScreen">TRIPS</button><button data-screen="settings">SETTINGS</button></nav>
-</div>
+.profile-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:8px 0 14px}.profile-list{display:flex;flex-direction:column;gap:9px}.profile-item{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}.profile-main{flex:1;min-width:0}.profile-name{font-weight:700}.profile-meta{font-size:11px;color:var(--muted);margin-top:3px}.profile-menu{position:relative}.profile-menu summary{list-style:none;cursor:pointer;padding:5px 10px;font-size:22px}.profile-menu summary::-webkit-details-marker{display:none}.profile-menu[open] .menu{display:flex}.menu{display:none;position:absolute;right:0;top:34px;z-index:5;min-width:190px;background:#202a39;border:1px solid var(--line);border-radius:10px;padding:5px;flex-direction:column;box-shadow:0 12px 30px #0009}.menu button{text-align:left;border:0;background:transparent;padding:9px;font-size:13px}.menu button:hover{background:#303d50}.active-tag{font-size:10px;color:var(--green);border:1px solid #315e4c;border-radius:99px;padding:3px 7px;margin-left:6px}.modal{display:none;position:fixed;inset:0;background:#000b;z-index:20;align-items:center;justify-content:center;padding:16px}.modal.show{display:flex}.modal-box{width:min(100%,520px);max-height:90dvh;overflow:auto;background:#111720;border:1px solid var(--line);border-radius:16px;padding:18px}.modal-box h2{margin:0 0 14px}.modal-actions{display:flex;gap:8px;margin-top:15px}.modal-actions button{flex:1}.primary{background:var(--green);color:#07130e;border:0;font-weight:750}
+.toast{position:fixed;left:50%;bottom:36px;transform:translateX(-50%);max-width:min(92vw,520px);background:#202a39;border:1px solid var(--line);border-radius:12px;padding:11px 14px;font-size:13px;z-index:40;display:none;box-shadow:0 12px 30px #0009;line-height:1.4}.toast.show{display:block}.toast.err{border-color:#7a3434;color:#ffb4b4}.toast.ok{border-color:#315e4c}
+.fault{background:#3a1b1b;color:#ffb4b4;border:1px solid #7a3434;border-radius:12px;padding:12px;font-size:13px;margin-bottom:10px;display:none}.fault.show{display:block}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.chip{padding:6px 12px;font-size:12px;border-radius:99px}.check{display:flex;align-items:center;gap:8px;font-size:13px;margin:12px 0}.check input{width:auto}.row2{display:flex;gap:8px}.row2>*{flex:1}.statusbox{margin-top:14px;white-space:pre-wrap;word-break:break-word}table.m td:nth-child(n+2){text-align:right;padding-left:8px}table.m th{font-weight:600;color:var(--muted);text-align:right;font-size:12px;padding:4px 0 4px 8px}table.m th:first-child{text-align:left;padding-left:0}h3{margin:0 0 8px;font-size:16px}
+</style></head><body><header>VESC <span style="color:var(--green)">/</span> BLE DASHBOARD <span id="state" style="float:right;color:var(--muted);font-size:12px">Nicht verbunden</span></header><main id="track">
+<section class="page"><h2>Dashboard</h2><div class="fault" id="fault"></div><div class="grid"><div class="card hero"><div class="label">VESC SPEED</div><div class="val" id="speed">--</div><div class="label">km/h</div></div><div class="card"><div class="label">GPS SPEED</div><div class="val" id="gps">--</div><div class="label">km/h</div></div><div class="card"><div class="label">POWER</div><div class="val" id="power">--</div><div class="label">W</div></div><div class="card"><div class="label">BATTERY CURRENT</div><div class="val" id="amps">--</div><div class="label">A</div></div><div class="card"><div class="label">VOLTAGE</div><div class="val" id="volts">--</div><div class="label">V</div></div><div class="card"><div class="label">MOTOR TEMP</div><div class="val" id="motor">--</div><div class="label">°C</div></div><div class="card"><div class="label">FET TEMP</div><div class="val" id="fet">--</div><div class="label">°C</div></div><div class="card"><div class="label">ERPM</div><div class="val" id="erpm">--</div></div><div class="card"><div class="label">DUTY</div><div class="val" id="duty">--</div><div class="label">%</div></div><div class="card wide"><div class="actions"><button id="connect">Bluetooth verbinden</button><button id="disconnect" disabled>Trennen</button></div><p class="muted" id="hint">Bluetooth-Scan zeigt alle BLE-Geräte. Wähle den VESC aus; danach prüft die App den UART-Service (Nordic UART / HM-10 u. a.) und fragt die Firmware ab.</p></div></div></section>
+<section class="page"><h2>Config Profiles</h2><div class="profile-head"><span class="muted">Gespeicherte Fahrprofile</span><button class="primary" id="addProfile">＋ Add profile</button></div><div id="profiles" class="profile-list"></div><div class="card muted statusbox" id="profileStatus" style="display:none"></div><p class="muted" style="margin-top:14px">„Use until reboot“ schreibt die Limits per COMM_SET_MCCONF_TEMP(_SETUP) in den RAM des VESC (nach Neustart wieder die gespeicherte Konfiguration). „Use permanently“ speichert sie zusätzlich im Flash des Controllers. Strom-Limits gelten je Controller, Power-Limits (W) gesamt (bei Dual Drive gleichmäßig aufgeteilt). Strom-Werte über dem im VESC konfigurierten Motor-Strom-Maximum werden begrenzt.</p></section>
+<section class="page"><h2>RT Data</h2><div class="grid"><div class="card"><div class="label">Ah Drawn</div><div class="val" id="ah">--</div></div><div class="card"><div class="label">Ah Charged</div><div class="val" id="ahc">--</div></div><div class="card"><div class="label">Wh Drawn</div><div class="val" id="wh">--</div></div><div class="card"><div class="label">Wh Charged</div><div class="val" id="whc">--</div></div><div class="card"><div class="label">Trip distance</div><div class="val" id="dist">--</div><div class="label">km, aus Tachometer</div></div><div class="card"><div class="label">Efficiency</div><div class="val" id="eff">--</div><div class="label">Wh/km (netto)</div></div><div class="card wide"><table><tr><td>Trip time</td><td id="time">00:00:00</td></tr><tr><td>Speed avg / max</td><td id="ss">--</td></tr><tr><td>Power avg / max</td><td id="ps">--</td></tr><tr><td>Power min (Regen)</td><td id="pmin">--</td></tr><tr><td>Motor temp avg / max</td><td id="ms">--</td></tr><tr><td>FET temp avg / max</td><td id="fs">--</td></tr><tr><td>Current avg / max</td><td id="is">--</td></tr></table><button id="reset" style="width:100%;margin-top:12px">RESET SESSION</button></div><div class="card wide"><h3>Controller</h3><table class="m" id="motors"><tr><td class="muted">Keine Daten.</td></tr></table></div></div></section>
+<section class="page"><h2>Settings</h2><div class="card"><h3>Bluetooth LE</h3><p class="muted">Scan: alle BLE-Geräte anzeigen, danach UART-Service prüfen. Bei Verbindungsabbruch verbindet die App automatisch neu.</p><div class="field"><label>Target (Telemetrie)</label><select id="target"><option value="local">LOCAL / verbundener Controller</option><option value="can">Nur CAN-Controller (per CAN-ID)</option><option value="dual">Dual: LOCAL + CAN-Controller (kombiniert)</option></select></div><div class="field"><label>CAN-ID des zweiten Controllers (leer = keiner)</label><input id="canId" type="number" min="0" max="254" placeholder="z. B. 81"></div><label class="check"><input type="checkbox" id="disSec"> Single Drive: zweiten Controller per Stromskala 0 abschalten (nur bis Neustart)</label><div class="actions"><button id="connect2">Connect BLE</button><button id="disconnect2" disabled>Disconnect</button></div><div class="actions" style="margin-top:8px"><button id="scanCan" disabled>CAN-Bus scannen</button></div><div class="chips" id="canChips"></div></div><div class="card" style="margin-top:12px"><h3>Calibration</h3><div class="field"><label>Wheel circumference (mm)</label><input id="circ" type="number" value="2100"></div><div class="field"><label>Motor pole pairs</label><input id="poles" type="number" value="7"></div><div class="field"><label>Gear ratio (Motor-Umdrehungen je Radumdrehung)</label><input id="ratio" type="number" value="1" step=".01"></div><div class="row2"><button id="save">Kalibrierung speichern</button><button id="readSi" disabled>Aus VESC lesen</button></div><div class="row2" style="margin-top:8px"><button id="gpsCal" disabled>GPS-Kalibrierung starten</button></div><p class="muted" id="calinfo">Umfang per GPS: GPS aktivieren, mit konstanter Geschwindigkeit &gt; 10 km/h fahren, dann übernehmen.</p></div><div class="card" style="margin-top:12px"><h3>GPS &amp; Diagnostics</h3><div class="actions"><button id="gpsbtn">GPS aktivieren</button><button id="poll" disabled>GET VALUES</button></div><p class="muted" id="diag" style="white-space:pre-wrap;word-break:break-word">Noch keine Daten.</p></div><div class="notice" style="margin-top:12px">Web Bluetooth benötigt HTTPS (oder localhost) und einen kompatiblen Browser, z. B. Chrome auf Android oder Desktop. iPhone Safari unterstützt Web Bluetooth nicht. Nicht umgesetzt (nur mit VESC Tool): FOC-Motorerkennung/Encoder-Kalibrierung und das Schreiben der VESC-eigenen Rad-/Polpaar-/Getriebe-Werte (erfordert vollständige, firmware-spezifische MCCONF-Serialisierung).</div></section></main><div id="nav"><i class="dot active"></i><i class="dot"></i><i class="dot"></i><i class="dot"></i></div><div class="toast" id="toast"></div>
+<div class="modal" id="profileModal"><div class="modal-box"><h2 id="modalTitle">Add profile</h2><div class="field"><label>Profile name</label><input id="pfName" maxlength="32" placeholder="z. B. Street / Offroad"></div><div class="field"><label>Top speed (km/h)</label><input id="pfTop" type="number" value="95"></div><div class="field"><label>Reverse speed (km/h)</label><input id="pfReverse" type="number" value="5"></div><div class="field"><label>Current accel (A je Controller)</label><input id="pfAccel" type="number" value="130"></div><div class="field"><label>Current brake (A je Controller, negativ)</label><input id="pfBrake" type="number" value="-80"></div><div class="field"><label>Max power out (W gesamt)</label><input id="pfOut" type="number" value="5000"></div><div class="field"><label>Max power regen (W gesamt, negativ)</label><input id="pfRegen" type="number" value="-500"></div><div class="field"><label>Power limit</label><select id="pfLimit"><option value="true">Enabled</option><option value="false">Disabled (Firmware-Standard-Watt-Limits)</option></select></div><div class="field"><label>Drive mode</label><select id="pfDrive"><option value="single">Single Drive</option><option value="dual">Dual Drive</option></select></div><div class="modal-actions"><button id="cancelProfile">Cancel</button><button class="primary" id="saveProfile">Save profile</button></div></div></div>
 <script>
-"use strict";
+(()=>{'use strict';
 const $=id=>document.getElementById(id);
-const BLE_PROFILES=[
-  {name:"Nordic UART",service:"6e400001-b5a3-f393-e0a9-e50e24dcca9e",rx:"6e400002-b5a3-f393-e0a9-e50e24dcca9e",tx:"6e400003-b5a3-f393-e0a9-e50e24dcca9e"},
-  {name:"HM-10 / FFE0",service:0xffe0},
-  {name:"FFF0 UART",service:0xfff0},
-  {name:"FFE5 UART",service:0xffe5},
-  {name:"ISSC transparent UART",service:"49535343-fe7d-4ae5-8fa9-9fafd205e455"},
-  {name:"Vendor FF00",service:0xff00}
-];
-let demo=true,unit="kmh",source="vesc",gpsOn=false,gpsWatch=null,wakeLock=null,wakeOn=false;
-let device=null,server=null,writeChar=null,notifyChar=null,port=null,writer=null,reader=null,transport="",connected=false,buffer=new Uint8Array(0),lastReply=0,lastReq=0,requestInFlight=false;
-let gpsKmh=null,trip=0,lastLoop=performance.now(),phase=0,phaseStart=performance.now(),demoSpeed=0;
-let t={voltage:null,inputCurrent:null,motorCurrent:null,duty:null,rpm:null,fet:null,motor:null,battery:null};
-const phases=[{d:3000,a:0,b:50},{d:1800,a:50,b:68},{d:1200,a:68,b:48},{d:2800,a:48,b:90},{d:2200,a:90,b:0}];
-function status(s,on=false,err=false){$("status").textContent=s;$("dot").classList.toggle("on",on);$("dot").style.background=err?"#ff6961":""}
-function settings(){return{diam:Number($("wheelDiameter").value),pairs:Number($("polePairs").value),ratio:Number($("gearRatio").value),max:Math.max(10,Number($("gaugeMax").value)||100),cells:Number($("seriesCells").value)}}
-function vescSpeed(){let s=settings();if(!Number.isFinite(t.rpm)||s.diam<=0||s.pairs<=0||s.ratio<=0)return null;return Math.abs(t.rpm)/s.pairs/s.ratio*Math.PI*s.diam/1000*60/1000}
-function kmh(){if(demo)return demoSpeed;return source==="gps"?gpsKmh:vescSpeed()}
-function disp(v){return Number.isFinite(v)?(unit==="mph"?v*.621371:v):null}
-function fmt(v,n=1){return Number.isFinite(v)?v.toFixed(n):"--"}
-function setNotice(s){$("notice").textContent=s}
-function showScreen(id){["dashboard","batteryScreen","mapScreen","tripsScreen","settings"].forEach(x=>$(x).classList.toggle("hidden",x!==id));document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.screen===id))}
-document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>showScreen(b.dataset.screen));
-function crc16(a){let c=0;for(const b of a){c^=b<<8;for(let i=0;i<8;i++)c=c&0x8000?(c<<1)^0x1021:c<<1;c&=65535}return c}
-function packet(payload){let p;if(payload.length<256){p=new Uint8Array(payload.length+5);p[0]=2;p[1]=payload.length;p.set(payload,2)}else{p=new Uint8Array(payload.length+6);p[0]=3;p[1]=payload.length>>8;p[2]=payload.length&255;p.set(payload,3)}let h=p[0]===2?2:3,c=crc16(payload);p[p.length-3]=c>>8;p[p.length-2]=c&255;p[p.length-1]=3;return p}
-function i16(v,o){return v.getInt16(o,false)}function i32(v,o){return v.getInt32(o,false)}
-function parseValues(p){
-  if(p[0]!==4)return;
-  // Common VESC COMM_GET_VALUES layout: temp FET/motor, currents, duty, ERPM, voltage, counters.
-  // Firmware variants may differ; require a sufficiently long payload before decoding.
-  if(p.length<54){$("bleInfo").textContent="VESC reply too short for the common GET_VALUES layout; firmware protocol may differ.";return}
-  const v=new DataView(p.buffer,p.byteOffset,p.byteLength);let o=1;
-  const fet=i16(v,o)/10;o+=2;const motor=i16(v,o)/10;o+=2;
-  const mc=i32(v,o)/100;o+=4;const ic=i32(v,o)/100;o+=4;o+=8;
-  const duty=i16(v,o)/1000;o+=2;const rpm=i32(v,o);o+=4;const volts=i16(v,o)/10;const ah=i32(v,29)/10000,wh=i32(v,37)/10000,fault=v.getUint8(53);
-  if(![fet,motor,mc,ic,duty,rpm,volts].every(Number.isFinite))return;
-  t={...t,fet,motor,motorCurrent:mc,inputCurrent:ic,duty,rpm,voltage:volts,battery:null,ah,wh,fault};lastReply=Date.now();connected=true;demo=false;status("CONNECTED",true);
-}
-function receive(data){const a=data instanceof Uint8Array?data:new Uint8Array(data);const n=new Uint8Array(buffer.length+a.length);n.set(buffer);n.set(a,buffer.length);buffer=n;while(buffer.length>=5){let h,len;if(buffer[0]===2){h=2;len=buffer[1]}else if(buffer[0]===3){if(buffer.length<6)return;h=3;len=(buffer[1]<<8)|buffer[2]}else{buffer=buffer.slice(1);continue}let total=h+len+3;if(!len||total>8192){buffer=buffer.slice(1);continue}if(buffer.length<total)return;let p=buffer.slice(0,total);buffer=buffer.slice(total);let payload=p.slice(h,h+len),crc=(p[total-3]<<8)|p[total-2];if(p[total-1]===3&&crc16(payload)===crc)parseValues(payload)}}
-function bleData(e){receive(new Uint8Array(e.target.value.buffer,e.target.value.byteOffset,e.target.value.byteLength))}
-async function sendGetValues(){const p=packet(new Uint8Array([4]));if(transport==="ble"&&writeChar){if(writeChar.properties.write)await writeChar.writeValueWithResponse(p);else if(writeChar.properties.writeWithoutResponse)await writeChar.writeValueWithoutResponse(p);else throw Error("UART RX characteristic is not writable")}else if(transport==="usb"&&writer)await writer.write(p)}
-async function connectBle(){
-  if(!navigator.bluetooth){
-    $("bleInfo").textContent="Web Bluetooth is unavailable here. Use desktop Chrome/Edge over HTTPS.";
-    return;
-  }
-  try {
-    $("connectBle").disabled=true;
-    status("CONNECTING");
-    try{ if(device&&device.gatt&&device.gatt.connected) device.gatt.disconnect(); }catch(_){}
-    $("bleInfo").textContent="Choose your VESC BLE adapter…";
-    device=await navigator.bluetooth.requestDevice({
-      acceptAllDevices:true,
-      optionalServices:BLE_PROFILES.map(p=>p.service)
-    });
-    device.addEventListener("gattserverdisconnected",()=>{
-      server=null;resetLink("bleInfo","BLE device disconnected.");
-    });
-    const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-    let lastErr=null;server=null;
-    for(let i=1;i<=3&&!server;i++){
-      try{
-        $("bleInfo").textContent="Connecting to "+(device.name||"adapter")+" (attempt "+i+"/3)…";
-        server=await Promise.race([device.gatt.connect(),new Promise((_,rej)=>setTimeout(()=>rej(new Error("Connection timed out")),12000))]);
-      }catch(e){
-        lastErr=e;
-        try{device.gatt.disconnect()}catch(_){}
-        await sleep(1200);
-      }
-    }
-    if(!server) throw new Error("Could not open a GATT connection to "+(device.name||"the selected device")+" ("+(lastErr&&lastErr.message)+"). Make sure nothing else (VESC Tool, the adapter's phone app, another browser tab) is connected to it, power-cycle the adapter, and confirm you picked the right device.");
-    let svc=null,prof=null;
-    for(const p of BLE_PROFILES){
-      try{svc=await server.getPrimaryService(p.service);prof=p;break}catch(_){}
-    }
-    if(!svc) throw new Error("None of the known BLE UART services were found (Nordic UART, FFE0, FFF0, FFE5, ISSC). This adapter may use a different service, or may not forward VESC UART packets. Inspect it with nRF Connect to see its service UUIDs.");
-    let chars=await svc.getCharacteristics();
-    const canNotify=c=>c.properties.notify||c.properties.indicate;
-    const canWrite=c=>c.properties.write||c.properties.writeWithoutResponse;
-    notifyChar=(prof.tx&&chars.find(c=>c.uuid===prof.tx))||chars.find(canNotify);
-    writeChar=(prof.rx&&chars.find(c=>c.uuid===prof.rx))||chars.find(c=>canWrite(c)&&c!==notifyChar)||chars.find(canWrite);
-    if(!notifyChar||!writeChar) throw new Error(prof.name+" service found, but no notify and write characteristics were found.");
-    await notifyChar.startNotifications();
-    notifyChar.addEventListener("characteristicvaluechanged",bleData);
-    transport="ble"; connected=true; demo=false;
-    status("CONNECTED",true);
-    $("bleInfo").textContent="BLE connected to "+(device.name||"adapter")+" via "+prof.name+". Requesting VESC telemetry…";
-    lastReq=0;
-    setNotice("BLE CONNECTED · VERIFYING VESC DATA");
-  } catch(e) {
-    connected=false; transport="";
-    status("CONNECTION ERROR",false,true);
-    $("bleInfo").textContent=(e.name==="NotFoundError"?"No device selected.":(e.message||"Could not connect"));
-    try { if(server&&server.connected) server.disconnect(); } catch(_){}
-  } finally {
-    $("connectBle").disabled=false;
-  }
-}
-async function connectUsb(){if(!navigator.serial){$("usbInfo").textContent="Web Serial unsupported. Use desktop Chrome/Edge over HTTPS.";return}try{$("connectUsb").disabled=true;status("CONNECTING");port=await navigator.serial.requestPort();await port.open({baudRate:115200});writer=port.writable.getWriter();transport="usb";connected=true;demo=false;status("CONNECTED",true);$("usbInfo").textContent="Serial port open; waiting for VESC telemetry.";lastReq=0;readSerial()}catch(e){status("CONNECTION ERROR",false,true);$("usbInfo").textContent=`${e.name}: ${e.message}`}finally{$("connectUsb").disabled=false}}
-async function readSerial(){try{reader=port.readable.getReader();while(true){const {value,done}=await reader.read();if(done)break;if(value)receive(value)}}catch(e){$("usbInfo").textContent="Serial read error: "+e.message}finally{try{reader&&reader.releaseLock()}catch(_){}}}
-window.addEventListener("pagehide",()=>{try{if(device&&device.gatt&&device.gatt.connected)device.gatt.disconnect()}catch(_){}});
+const num=(v,d=1)=>Number.isFinite(v)?v.toFixed(d):'--';
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const lsGet=(k,d)=>{try{const v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch{return d}};
+const lsSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}};
 
-function resetLink(msgId,msg){connected=false;transport="";writeChar=notifyChar=null;buffer=new Uint8Array(0);lastReply=0;status("DISCONNECTED");if(msgId)$(msgId).textContent=msg;setNotice("DISCONNECTED · NO LIVE TELEMETRY")}
-async function disconnectAll(){
-  try{if(notifyChar){notifyChar.removeEventListener("characteristicvaluechanged",bleData);try{await notifyChar.stopNotifications()}catch(_){}}}catch(_){}
-  try{if(device&&device.gatt&&device.gatt.connected)device.gatt.disconnect()}catch(_){}
-  server=null;
-  try{if(reader){await reader.cancel()}}catch(_){}
-  try{if(writer){writer.releaseLock();writer=null}}catch(_){}
-  try{if(port){await port.close();port=null}}catch(_){}
-  resetLink("bleInfo","Disconnected. Tap CONNECT to reconnect.");$("usbInfo").textContent="Desktop Chrome/Edge, compatible adapter";
-}
-$("disconnectBtn").onclick=disconnectAll;$("disconnectTop").onclick=disconnectAll;
-const KEYS=["wheelDiameter","polePairs","gearRatio","seriesCells","gaugeMax","packWh","ctrlMult"];
-function saveSettings(){try{localStorage.setItem("vescDash",JSON.stringify(Object.fromEntries(KEYS.map(k=>[k,$(k).value]))))}catch(_){}}
-function loadSettings(){try{const o=JSON.parse(localStorage.getItem("vescDash")||"{}");KEYS.forEach(k=>{if(o[k]!==undefined&&$(k))$(k).value=o[k]})}catch(_){}}
-loadSettings();KEYS.forEach(k=>$(k).addEventListener("change",saveSettings));
-$("calibrate").onclick=()=>{
-  const m=s=>$("calInfo").textContent=s,v=vescSpeed(),g=gpsKmh;
-  if(!gpsOn||!Number.isFinite(g))return m("Turn GPS speed ON and wait until it shows a speed.");
-  if(!connected||demo||!Number.isFinite(v))return m("Connect to the VESC first (demo mode off).");
-  if(g<8||v<8)return m("Ride at a steady 20+ km/h so both speeds read above 8, then try again.");
-  const r=settings().ratio*v/g;$("gearRatio").value=r.toFixed(3);saveSettings();
-  m("Gear ratio set to "+r.toFixed(3)+" (VESC read "+v.toFixed(1)+", GPS "+g.toFixed(1)+" km/h). Ride again to verify.");
-};
-$("connectBle").onclick=connectBle;$("connectUsb").onclick=connectUsb;
-$("demoToggle").onclick=()=>{demo=!demo;$("demoToggle").textContent=demo?"ON":"OFF";if(demo){phase=0;phaseStart=performance.now();setNotice("DEMO DATA · NOT REAL TELEMETRY")}else setNotice(connected?"LIVE MODE · WAITING FOR DATA":"DEMO OFF · NO LIVE DATA")};
-$("unitToggle").onclick=()=>{unit=unit==="kmh"?"mph":"kmh";$("unitToggle").textContent=unit==="kmh"?"KM/H":"MPH";$("maxUnitLabel")&&($("maxUnitLabel").textContent=unit==="kmh"?"km/h":"mph")};
-$("speedSource").onclick=()=>{source=source==="vesc"?"gps":"vesc";$("speedSource").textContent=source.toUpperCase()};
-$("tripReset").onclick=()=>{trip=0};
-$("gpsToggle").onclick=()=>{if(gpsOn){gpsOn=false;if(gpsWatch!==null)navigator.geolocation.clearWatch(gpsWatch);gpsWatch=null;gpsKmh=null;$("gpsInfo").textContent="GPS disabled";$("gpsToggle").textContent="OFF";return}if(!navigator.geolocation){$("gpsInfo").textContent="Geolocation unsupported";return}gpsOn=true;$("gpsToggle").textContent="ON";$("gpsInfo").textContent="Waiting for location permission";gpsWatch=navigator.geolocation.watchPosition(p=>{window.onGpsFix&&window.onGpsFix(p);gpsKmh=Number.isFinite(p.coords.speed)&&p.coords.speed>=0?p.coords.speed*3.6:null;$("gpsInfo").textContent=gpsKmh===null?"Location available; speed not reported":"GPS speed active"},e=>{$("gpsInfo").textContent=({1:"Permission denied",2:"Location unavailable",3:"Location timed out"})[e.code]||"GPS error";gpsOn=false;$("gpsToggle").textContent="OFF"},{enableHighAccuracy:true,maximumAge:1000,timeout:15000})};
-$("wakeToggle").onclick=async()=>{if(!wakeOn){if(!navigator.wakeLock){$("wakeInfo").textContent="Wake Lock unsupported";return}try{wakeLock=await navigator.wakeLock.request("screen");wakeOn=true;$("wakeToggle").textContent="ON";$("wakeInfo").textContent="Screen wake lock active"}catch(e){$("wakeInfo").textContent=e.message}}else{try{await wakeLock.release()}catch(_){}wakeLock=null;wakeOn=false;$("wakeToggle").textContent="OFF";$("wakeInfo").textContent="Screen may sleep normally"}};
-document.addEventListener("visibilitychange",async()=>{if(document.visibilityState==="visible"&&wakeOn&&navigator.wakeLock){try{wakeLock=await navigator.wakeLock.request("screen")}catch(_){}}});
-function socFromVoltage(v){
-  const c=settings().cells;if(!Number.isFinite(v)||!(c>0))return null;
-  const x=v/c,pts=[[3.0,0],[3.3,3],[3.5,10],[3.6,20],[3.7,35],[3.8,50],[3.9,65],[4.0,80],[4.1,90],[4.2,100]];
-  if(x<=pts[0][0])return 0;if(x>=pts[pts.length-1][0])return 100;
-  for(let i=1;i<pts.length;i++){if(x<=pts[i][0]){const[a,b]=pts[i-1],[c2,d]=pts[i];return b+(d-b)*(x-a)/(c2-a)}}
-  return null}
-function fmtPower(w){if(!Number.isFinite(w))return"-- kW";return Math.abs(w)<1000?Math.round(w)+" W":(w/1000).toFixed(2)+" kW"}
-function render(){let s=disp(kmh()),gmax=settings().max*(unit==="mph"?.621371:1);$("speed").textContent=s===null?"--":Math.round(s);$("arc").style.strokeDasharray=s===null?"0 785":`${Math.max(0,Math.min(1,s/gmax))*589} 785`;let gs=disp(gpsKmh);$("gpsSpeed").textContent=gs===null?"--":Math.round(gs);$("gpsUnit").textContent=unit==="mph"?"MPH":"KM/H";$("units").textContent=unit==="mph"?"MPH":"KM/H";$("trip").textContent=(unit==="mph"?trip*.621371:trip).toFixed(1);$("tripUnit").textContent=unit==="mph"?"mi":"km";$("duty").textContent=t.duty===null?"--":Math.round(t.duty*100)+"%";$("fet").textContent=t.fet===null?"--°C":Math.round(t.fet)+"°C";let est=t.voltage===null?null:socFromVoltage(t.voltage);let pct=t.battery??(demo?84:est);$("battery").textContent=pct===null?"--%":(t.battery===null&&!demo?"~":"")+Math.round(pct)+"%";$("bar").style.width=pct===null?"0%":Math.max(0,Math.min(100,pct))+"%";$("voltage").textContent=t.voltage===null?"-- V":fmt(t.voltage)+" V";$("power").textContent=t.voltage===null||t.inputCurrent===null?"-- kW":fmtPower(t.voltage*t.inputCurrent*(Number($("ctrlMult").value)||1));$("inputCurrent").textContent=t.inputCurrent===null?"-- A input":fmt(t.inputCurrent*(Number($("ctrlMult").value)||1))+" A input";$("motorTemp").textContent=t.motor===null?"--°C":Math.round(t.motor)+"°C";$("motorCurrent").textContent=t.motorCurrent===null?"-- A motor":fmt(t.motorCurrent)+" A motor";$("packVoltage").textContent=t.voltage===null?"-- V":fmt(t.voltage,2)+" V";$("batteryCurrent").textContent=t.inputCurrent===null?"-- A":fmt(t.inputCurrent*(Number($("ctrlMult").value)||1))+" A";let per=t.voltage===null?null:socFromVoltage(t.voltage);$("estimate").textContent=t.battery!==null?Math.round(t.battery)+"% reported":demo?"~84% demo":per===null?"Unavailable":"~"+Math.round(Math.max(0,Math.min(100,per)))+"% estimate";$("batteryNote").textContent=demo?"Simulated voltage":connected?"Controller-reported pack voltage":"No live battery data";$("whUsed").textContent=Number.isFinite(t.wh)?t.wh.toFixed(1)+" Wh":"-- Wh";$("erpm").textContent=Number.isFinite(t.rpm)?String(Math.round(t.rpm)):"--";$("faultInfo").textContent="fault: "+(Number.isFinite(t.fault)?(t.fault===0?"none":"code "+t.fault):"--");$("disconnectBtn").disabled=!connected;$("disconnectTop").classList.toggle("hidden",!connected);$("source").textContent=demo?"DEMO":connected?transport.toUpperCase():"OFFLINE";$("speedCaption").textContent=demo?"SIMULATED SPEED":source==="gps"?"GPS SPEED SOURCE":vescSpeed()===null?"CHECK SPEED CALIBRATION":"VESC RPM · CALCULATED";if(demo){$("notice").textContent="DEMO DATA · NOT REAL TELEMETRY"}else if(connected&&lastReply){$("notice").textContent="LIVE VESC DATA · LAST REPLY "+Math.max(0,Math.round((Date.now()-lastReply)/1000))+"S AGO"}else $("notice").textContent="NO LIVE TELEMETRY · CHECK CONNECTION"}
-let lastTick=performance.now();
-function loop(now){let dt=Math.min(.1,(now-lastTick)/1000);lastTick=now;if(demo){let p=phases[phase],f=Math.min(1,(now-phaseStart)/p.d),e=f*f*(3-2*f);demoSpeed=p.a+(p.b-p.a)*e;if(f>=1){phase=(phase+1)%phases.length;phaseStart=now}t={voltage:72,inputCurrent:demoSpeed*.75,motorCurrent:demoSpeed*1.2,duty:Math.min(.95,demoSpeed/100),rpm:null,fet:32+demoSpeed*.25,motor:32+demoSpeed*.32,battery:84}}let v=kmh();if(Number.isFinite(v)&&v>0)trip+=v/3600*dt;if(connected&&transport&&now-lastReq>150&&!requestInFlight){lastReq=now;requestInFlight=true;sendGetValues().catch(e=>{let id=transport==="ble"?"bleInfo":"usbInfo";$(id).textContent="VESC request error: "+e.message}).finally(()=>{requestInFlight=false})}if(!demo&&connected&&lastReply&&Date.now()-lastReply>4000)status("NO TELEMETRY",false,true);render();requestAnimationFrame(loop)}
-render();requestAnimationFrame(loop);
+/* ───────── UI-Helfer ───────── */
+let toastT=0;
+function toast(msg,kind){const t=$('toast');t.textContent=msg;t.className='toast show '+(kind||'');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),kind==='err'?7000:4000)}
+const diag=t=>{$('diag').textContent=t};
 
-</script>
-<script>
-"use strict";
-(()=>{
-const LS_TRIPS="vescDashTrips",LS_ACTIVE="vescDashActive";
-const D=km=>unit==="mph"?km*0.621371:km,DU=()=>unit==="mph"?"mi":"km";
-const mult=()=>Math.max(1,Number($("ctrlMult").value)||1);
-const hav=(a,b)=>{const R=6371,r=Math.PI/180,dLa=(b[0]-a[0])*r,dLo=(b[1]-a[1])*r,x=Math.sin(dLa/2)**2+Math.cos(a[0]*r)*Math.cos(b[0]*r)*Math.sin(dLo/2)**2;return 2*R*Math.asin(Math.sqrt(x))};
-const fmtDur=ms=>{const s=Math.max(0,Math.round(ms/1000)),h=Math.floor(s/3600),m=Math.floor(s%3600/60),r=s%60,p=n=>String(n).padStart(2,"0");return h?h+":"+p(m)+":"+p(r):m+":"+p(r)};
-let trips=[],trip=null,reviewing=null,follow=true,noteTimer=null;
-const live={pts:[],cur:null,last:null,fixAt:0,acc:999};
-let odoKm=0,odoWh=0,samples=[{km:0,wh:0}],socEma=null;
-let map=null,liveLine=null,rider=null,reviewLayer=null,firstFix=true,lastPersist=0;
+/* ───────── VESC-Protokoll (verifiziert gegen bldc Firmware 6.00: datatypes.h, commands.c, packet.c, buffer.c) ───────── */
+const CMD={FW:0,VALUES:4,MCCONF:14,MCCONF_DEFAULT:15,FWD_CAN:34,TEMP:48,TEMP_SETUP:49,PING_CAN:62,MCCONF_TEMP:91};
+const FAULTS=['NONE','OVER_VOLTAGE','UNDER_VOLTAGE','DRV','ABS_OVER_CURRENT','OVER_TEMP_FET','OVER_TEMP_MOTOR','GATE_DRIVER_OVER_VOLTAGE','GATE_DRIVER_UNDER_VOLTAGE','MCU_UNDER_VOLTAGE','BOOTING_FROM_WATCHDOG_RESET','ENCODER_SPI','ENCODER_SINCOS_BELOW_MIN_AMPLITUDE','ENCODER_SINCOS_ABOVE_MAX_AMPLITUDE','FLASH_CORRUPTION','HIGH_OFFSET_CURRENT_SENSOR_1','HIGH_OFFSET_CURRENT_SENSOR_2','HIGH_OFFSET_CURRENT_SENSOR_3','UNBALANCED_CURRENTS','BRK','RESOLVER_LOT','RESOLVER_DOS','RESOLVER_LOS','FLASH_CORRUPTION_APP_CFG','FLASH_CORRUPTION_MC_CFG','ENCODER_NO_MAGNET','ENCODER_MAGNET_TOO_STRONG','PHASE_FILTER','ENCODER_FAULT','LV_OUTPUT_FAULT'];
+const CRC_T=(()=>{const t=new Uint16Array(256);for(let i=0;i<256;i++){let c=i<<8;for(let j=0;j<8;j++)c=(c&0x8000)?((c<<1)^0x1021):(c<<1);t[i]=c&0xFFFF}return t})();
+function crc16(a){let c=0;for(let i=0;i<a.length;i++)c=((c<<8)&0xFFFF)^CRC_T[((c>>8)^a[i])&0xFF];return c}
+function frame(p){const n=p.length,c=crc16(p);const h=n<256?[2,n]:n<65536?[3,n>>8,n&255]:[4,n>>16,(n>>8)&255,n&255];return Uint8Array.from([...h,...p,c>>8,c&255,3])}
+class Parser{constructor(cb){this.b=new Uint8Array(0);this.cb=cb;this.t=0}
+ push(chunk){const now=performance.now();if(this.b.length&&now-this.t>2000)this.b=new Uint8Array(0);this.t=now;const nb=new Uint8Array(this.b.length+chunk.length);nb.set(this.b);nb.set(chunk,this.b.length);this.b=nb;this.scan()}
+ scan(){const b=this.b;let i=0;
+  while(i<b.length){const s=b[i],hl=s===2?2:s===3?3:s===4?4:0;if(!hl){i++;continue}
+   if(b.length-i<hl)break;
+   const len=s===2?b[i+1]:s===3?((b[i+1]<<8)|b[i+2]):((b[i+1]<<16)|(b[i+2]<<8)|b[i+3]);
+   if(len<1||len>8192){i++;continue}
+   const tot=hl+len+3;if(b.length-i<tot)break;
+   const pl=b.subarray(i+hl,i+hl+len),c=(b[i+hl+len]<<8)|b[i+hl+len+1];
+   if(b[i+tot-1]===3&&crc16(pl)===c){this.cb(pl.slice());i+=tot}else{stats.crc++;i++}}
+  this.b=b.slice(i)}}
+const rd={i16:(a,p)=>((a[p]<<8)|a[p+1])<<16>>16,u16:(a,p)=>(a[p]<<8)|a[p+1],i32:(a,p)=>(a[p]<<24)|(a[p+1]<<16)|(a[p+2]<<8)|a[p+3],u32:(a,p)=>(((a[p]<<24)|(a[p+1]<<16)|(a[p+2]<<8)|a[p+3])>>>0),
+ f32a(a,p){const r=rd.u32(a,p);let e=(r>>>23)&0xFF;const si=r&0x7FFFFF;let sig=0;if(e!==0||si!==0){sig=si/(8388608*2)+0.5;e-=126}if(r>>>31)sig=-sig;return sig*Math.pow(2,e)}};
+function f32aEnc(x){x=Math.fround(x);if(!Number.isFinite(x)||Math.abs(x)<1.5e-38)x=0;let e=0,sig=0;
+ if(x!==0){const ax=Math.abs(x);e=Math.floor(Math.log2(ax))+1;sig=ax/Math.pow(2,e);while(sig>=1){sig/=2;e++}while(sig<0.5){sig*=2;e--}if(x<0)sig=-sig}
+ const sa=Math.abs(sig);let si=0;if(sa>=0.5){si=Math.floor((sa-0.5)*2*8388608);if(si>0x7FFFFF)si=0x7FFFFF;e+=126}
+ let r=(((e&0xFF)<<23)|si)>>>0;if(sig<0)r=(r|0x80000000)>>>0;return[(r>>>24)&255,(r>>>16)&255,(r>>>8)&255,r&255]}
 
-try{trips=JSON.parse(localStorage.getItem(LS_TRIPS)||"[]");if(!Array.isArray(trips))trips=[]}catch(_){trips=[]}
-try{const a=JSON.parse(localStorage.getItem(LS_ACTIVE)||"null");if(a&&a.id&&Array.isArray(a.pts))trip=a}catch(_){}
-function saveTrips(){try{localStorage.setItem(LS_TRIPS,JSON.stringify(trips));return true}catch(e){note("Storage full: delete old trips or export them as GPX.");return false}}
-function persistActive(){try{if(trip)localStorage.setItem(LS_ACTIVE,JSON.stringify(trip));else localStorage.removeItem(LS_ACTIVE)}catch(_){}}
-function note(s){$("mapInfo2").textContent=s;clearTimeout(noteTimer);noteTimer=setTimeout(()=>$("mapInfo2").textContent="",6000)}
+/* ───────── Verbindung (BLE-UART) ───────── */
+const BLE_PROFILES=[{name:'Nordic UART',service:'6e400001-b5a3-f393-e0a9-e50e24dcca9e',rx:'6e400002-b5a3-f393-e0a9-e50e24dcca9e',tx:'6e400003-b5a3-f393-e0a9-e50e24dcca9e'},{name:'HM-10 / FFE0',service:0xffe0},{name:'FFF0 UART',service:0xfff0},{name:'FFE5 UART',service:0xffe5},{name:'ISSC transparent UART',service:'49535343-fe7d-4ae5-8fa9-9fafd205e455'},{name:'Vendor FF00',service:0xff00}];
+let dev=null,chW=null,chN=null,parser=null,connected=false,userDisc=false,linkId=0,svcName='',fwInfo=null,localId=null,reconnecting=false;
+const stats={rx:0,tx:0,drop:0,crc:0};
+let pend=null,chain=Promise.resolve(),wq=Promise.resolve();
+const wantUuid=s=>(typeof s==='number'?('0000'+s.toString(16).padStart(4,'0')+'-0000-1000-8000-00805f9b34fb'):s).toLowerCase();
+async function writeChunk(ch){const c=chW;if(!c)throw new Error('Nicht verbunden');
+ if(c.properties.writeWithoutResponse&&c.writeValueWithoutResponse){try{await c.writeValueWithoutResponse(ch);return}catch(e){if(!(c.properties.write))throw e}}
+ if(c.writeValueWithResponse)await c.writeValueWithResponse(ch);else await c.writeValue(ch)}
+function writeBytes(data){const job=async()=>{for(let i=0;i<data.length;i+=20)await writeChunk(data.slice(i,i+20))};const p=wq.then(job,job);wq=p.catch(()=>{});return p}
+function onPacket(pl){stats.rx++;if(pend&&pl[0]===pend.expect&&(!pend.match||pend.match(pl))){const p=pend;pend=null;clearTimeout(p.timer);p.res(pl)}else stats.drop++}
+function request(payload,expect,opt={}){const timeout=opt.timeout||1200,retries=opt.retries||0;
+ const run=()=>new Promise((res,rej)=>{if(!chW)return rej(new Error('Nicht verbunden'));
+  const p={expect,match:opt.match||null,res,rej};p.timer=setTimeout(()=>{if(pend===p)pend=null;rej(new Error('Timeout (keine Antwort auf Kommando '+payload[payload[0]===CMD.FWD_CAN?2:0]+')'))},timeout);pend=p;stats.tx++;
+  writeBytes(frame(payload)).catch(e=>{clearTimeout(p.timer);if(pend===p)pend=null;rej(e)})});
+ const job=async()=>{let last;for(let i=0;i<=retries;i++){try{return await run()}catch(e){last=e;if(!chW)break}}throw last};
+ const pr=chain.then(job,job);chain=pr.catch(()=>{});return pr}
+const fwd=(can,inner)=>can==null?inner:[CMD.FWD_CAN,can,...inner];
+function teardown(){if(chN){try{chN.removeEventListener('characteristicvaluechanged',onNotify)}catch{}}chW=null;chN=null;parser=null;connected=false;if(pend){const p=pend;pend=null;clearTimeout(p.timer);p.rej(new Error('Verbindung getrennt'))}}
+function onNotify(e){const v=e.target.value;if(parser)parser.push(new Uint8Array(v.buffer,v.byteOffset,v.byteLength))}
+function setStatus(on,t){$('state').textContent=t;$('connect').disabled=$('connect2').disabled=on||reconnecting;$('disconnect').disabled=$('disconnect2').disabled=!on&&!reconnecting;$('poll').disabled=!on;$('scanCan').disabled=!on;$('readSi').disabled=!on;$('gpsCal').disabled=!on}
+function parseFw(a){let s='',i=3;while(i<a.length&&a[i]!==0)s+=String.fromCharCode(a[i++]);return{major:a[1],minor:a[2],hw:s}}
+async function openLink(){
+ const my=++linkId;teardown();stopPoll();
+ const withTimeout=(p,ms,l)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error(l+' Timeout nach '+ms/1000+' s')),ms))]);
+ let server=null,lastErr=null;
+ for(let i=1;i<=3&&!server;i++){try{diag('2/5: GATT-Verbindung zu '+(dev.name||'BLE-Gerät')+' ('+i+'/3)…');server=await withTimeout(dev.gatt.connect(),12000,'GATT-Verbindung')}catch(e){lastErr=e;try{dev.gatt.disconnect()}catch{}await sleep(1200)}}
+ if(!server)throw new Error('GATT-Verbindung fehlgeschlagen: '+(lastErr?.message||'unbekannt')+'. VESC Tool und andere Bluetooth-Apps schließen, Adapter neu starten.');
+ $('state').textContent='BLE LINK OK · UART SUCHE';diag('3/5: BLE verbunden. Lese GATT-Services…');
+ let all=[];try{all=await withTimeout(server.getPrimaryServices(),10000,'GATT-Service-Erkennung')}catch(e){throw new Error('BLE verbunden, aber keine GATT-Service-Liste: '+e.message+'. Adapter neu starten, andere BLE-Apps schließen.')}
+ const found=all.map(x=>x.uuid);let svc=null,prof=null;
+ for(const p of BLE_PROFILES){const m=all.find(x=>x.uuid.toLowerCase()===wantUuid(p.service));if(m){svc=m;prof=p;break}}
+ if(!svc)throw new Error('Kein bekannter UART-Service. Services des Geräts: '+(found.join(', ')||'keine'));
+ diag('4/5: '+prof.name+' gefunden. Prüfe Characteristics…');
+ const chars=await svc.getCharacteristics();const canN=c=>c.properties.notify||c.properties.indicate,canW=c=>c.properties.write||c.properties.writeWithoutResponse;
+ const n=(prof.tx&&chars.find(c=>c.uuid===prof.tx))||chars.find(canN);
+ const w=(prof.rx&&chars.find(c=>c.uuid===prof.rx))||chars.find(c=>canW(c)&&c!==n)||chars.find(canW);
+ if(!n||!w)throw new Error(prof.name+' gefunden, aber Notify- oder Write-Characteristic fehlt: '+chars.map(c=>c.uuid+' [notify:'+c.properties.notify+', write:'+c.properties.write+', writeNR:'+c.properties.writeWithoutResponse+']').join(' | '));
+ parser=new Parser(onPacket);chN=n;chW=w;svcName=prof.name;
+ await n.startNotifications();n.addEventListener('characteristicvaluechanged',onNotify);
+ if(my!==linkId)throw new Error('Abgebrochen');
+ diag('5/5: UART-Kanal bereit. Frage VESC-Firmware ab (COMM_FW_VERSION)…');
+ let fw=null;for(let i=0;i<3&&!fw;i++){try{fw=parseFw(await request([CMD.FW],CMD.FW,{timeout:1500}))}catch(e){if(!chW)throw e}}
+ if(!fw)throw new Error('UART-Kanal steht, aber der VESC antwortet nicht. Prüfen: UART-App-Modus und Baudrate (VESC Tool → App Settings → UART/BLE-Modul), RX/TX nicht vertauscht, 3,3 V-Versorgung, nur eine App am Modul.');
+ fwInfo=fw;
+ let v0=null;try{v0=await request([CMD.VALUES],CMD.VALUES,{timeout:1500,retries:1})}catch(e){throw new Error('FW '+fw.major+'.'+fw.minor+' antwortet, aber GET_VALUES schlägt fehl: '+e.message)}
+ localId=v0.length>58?v0[58]:null;
+ connected=true;setStatus(true,(dev.name||'Verbunden')+' · FW '+fw.major+'.'+fw.minor);
+ diag('Verbunden: '+(dev.name||'BLE')+' · '+svcName+' · FW '+fw.major+'.'+fw.minor+' · HW '+fw.hw+(localId!=null?' · CAN-ID '+localId:''));
+ wake();startPoll(my);postConnect(my)}
+function onGattDisc(){const was=connected||!!chW;teardown();stopPoll();if(userDisc||!dev){setStatus(false,'Getrennt');return}
+ if(!was&&!reconnecting)return;autoReconnect()}
+async function autoReconnect(){if(reconnecting)return;reconnecting=true;
+ for(let i=1;i<=4&&!userDisc;i++){setStatus(false,'Getrennt · Reconnect '+i+'/4');$('disconnect').disabled=$('disconnect2').disabled=false;diag('Verbindung verloren. Automatischer Reconnect '+i+'/4…');await sleep(1200*i);if(userDisc)break;
+  try{await openLink();reconnecting=false;toast('Verbindung wiederhergestellt','ok');return}catch(e){teardown();try{dev.gatt.disconnect()}catch{}}}
+ reconnecting=false;if(!connected){setStatus(false,'Getrennt');diag('Reconnect fehlgeschlagen. Bitte neu verbinden.')}}
+async function connect(){
+ if(!navigator.bluetooth){diag('Web Bluetooth nicht verfügbar. Bitte Chrome/Edge unter HTTPS oder localhost verwenden.');alert($('diag').textContent);return}
+ try{diag('1/5: Bluetooth-Gerät auswählen…');$('state').textContent='SCANNING…';userDisc=false;
+  try{if(dev&&dev.gatt&&dev.gatt.connected)dev.gatt.disconnect()}catch{}
+  dev=await navigator.bluetooth.requestDevice({acceptAllDevices:true,optionalServices:BLE_PROFILES.map(p=>p.service)});
+  dev.addEventListener('gattserverdisconnected',onGattDisc);
+  await openLink()
+ }catch(e){teardown();stopPoll();try{dev?.gatt?.disconnect()}catch{}
+  if(e.name==='NotFoundError'){setStatus(false,'Nicht verbunden');diag('Geräteauswahl abgebrochen.');return}
+  setStatus(false,'Fehler');diag((e.name||'Fehler')+': '+e.message);alert('Verbindungsdiagnose:\n'+e.message)}}
+function disconnect(){userDisc=true;reconnecting=false;linkId++;stopPoll();try{if(dev?.gatt?.connected)dev.gatt.disconnect()}catch{}teardown();setStatus(false,'Nicht verbunden');renderEmpty();releaseWake();diag('Getrennt.')}
+let wl=null;async function wake(){try{if('wakeLock'in navigator&&!wl){wl=await navigator.wakeLock.request('screen');wl.addEventListener('release',()=>{wl=null})}}catch{}}
+function releaseWake(){try{wl&&wl.release()}catch{}wl=null}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&connected)wake()});
 
-/* ---------- distance / energy / range ---------- */
-function addDist(d){if(!(d>0))return;odoKm+=d;if(trip)trip.km+=d;const l=samples[samples.length-1];if(odoKm-l.km>=0.05){samples.push({km:odoKm,wh:odoWh});while(samples.length>2&&odoKm-samples[1].km>=8)samples.shift()}}
-function addWh(w){odoWh+=w;if(trip)trip.wh+=w}
-function consumption(){
-  // Use the overall session average, not a short rolling window that can
-  // produce absurd range figures from a few seconds of riding.
-  if(odoKm<0.5||odoWh<=0)return null;
-  const c=odoWh/odoKm;
-  return Number.isFinite(c)&&c>=1&&c<=2000?c:null;
-}
-function range(){
-  const cap=Number($("packWh").value);
-  if(!(cap>0))return{note:"set battery Wh in Settings"};
-  if(socEma===null)return{note:"connect the VESC"};
-  const c=consumption();
-  if(c===null)return{note:"need 0.5+ km and valid energy data"};
-  return{km:cap*socEma/100/c,cons:c,note:"based on average · to 0% estimate"};
-}
+/* ───────── Einstellungen & Kalibrierung ───────── */
+const cfg=Object.assign({target:'local',canId:81,disableSecondary:true},lsGet('vesc-settings',{}));
+const saveCfg=()=>lsSet('vesc-settings',cfg);
+const validCan=v=>Number.isInteger(v)&&v>=0&&v<=254;
+function cal(){const c=+$('circ').value,p=+$('poles').value,r=+$('ratio').value;return{circ:c>0?c:2100,pp:p>0?p:7,ratio:r>0?r:1}}
+try{const c=JSON.parse(localStorage.getItem('vesc-cal')||'{}');for(const k of['circ','poles','ratio'])if(c[k])$(k).value=c[k]}catch{}
+$('target').value=cfg.target;$('canId').value=cfg.canId==null?'':cfg.canId;$('disSec').checked=!!cfg.disableSecondary;
+$('target').onchange=()=>{cfg.target=$('target').value;if(cfg.target!=='local'&&!validCan(cfg.canId)){toast('Bitte eine gültige CAN-ID (0–254) eintragen.','err')}saveCfg();resetSamples()};
+$('canId').onchange=()=>{const v=$('canId').value.trim();cfg.canId=v===''?null:parseInt(v,10);if(v!==''&&!validCan(cfg.canId)){toast('CAN-ID muss 0–254 sein.','err');cfg.canId=null;$('canId').value=''}saveCfg();resetSamples()};
+$('disSec').onchange=()=>{cfg.disableSecondary=$('disSec').checked;saveCfg()};
+$('save').onclick=()=>{const c=+$('circ').value,p=+$('poles').value,r=+$('ratio').value;
+ if(!(c>=300&&c<=4000)||!(p>=1&&p<=60)||!(r>=0.1&&r<=50)){toast('Ungültige Werte: Umfang 300–4000 mm, Polpaare 1–60, Übersetzung 0,1–50.','err');return}
+ localStorage.setItem('vesc-cal',JSON.stringify({circ:$('circ').value,poles:$('poles').value,ratio:$('ratio').value}));toast('Kalibrierung gespeichert','ok');checkCalDev()};
+const siFact=si=>(si.poles/2*60*si.gear)/(si.wheel*Math.PI);
+$('readSi').onclick=async()=>{try{const t=await getTemp('L');const s=t.si;if(!(s.wheel>0&&s.gear>0&&s.poles>0))throw new Error('VESC liefert unplausible Werte (Rad '+s.wheel+' m, Getriebe '+s.gear+', Pole '+s.poles+'). Im VESC Tool unter Setup/Motor „Rad-Durchmesser, Getriebe, Pole“ setzen.');
+ $('circ').value=Math.round(s.wheel*Math.PI*1000);$('poles').value=s.poles/2;$('ratio').value=+s.gear.toFixed(3);
+ localStorage.setItem('vesc-cal',JSON.stringify({circ:$('circ').value,poles:$('poles').value,ratio:$('ratio').value}));toast('Kalibrierung aus VESC übernommen','ok');$('calinfo').textContent='Übernommen aus VESC: Umfang '+$('circ').value+' mm, '+$('poles').value+' Polpaare, Übersetzung '+$('ratio').value+'.'}catch(e){toast('Lesen fehlgeschlagen: '+e.message,'err')}};
+async function checkCalDev(){if(!connected)return;try{const s=(await getTemp('L')).si;if(!(s.wheel>0&&s.gear>0&&s.poles>0))return;const c=cal();const vc=s.wheel*Math.PI*1000,vpp=s.poles/2;
+ const w=[];if(Math.abs(vc-c.circ)/vc>0.02)w.push('Umfang App '+c.circ+' mm ≠ VESC '+Math.round(vc)+' mm');if(Math.abs(vpp-c.pp)>0.01)w.push('Polpaare App '+c.pp+' ≠ VESC '+vpp);if(Math.abs(s.gear-c.ratio)/s.gear>0.02)w.push('Übersetzung App '+c.ratio+' ≠ VESC '+s.gear.toFixed(3));
+ $('calinfo').textContent=w.length?'Hinweis: '+w.join('; ')+'. Profil-Geschwindigkeitslimits nutzen die VESC-Werte. „Aus VESC lesen“ gleicht an.':'App-Kalibrierung stimmt mit den VESC-Werten überein.'}catch{}}
 
-/* ---------- GPS ---------- */
-window.onGpsFix=function(p){
-  const c=p&&p.coords;if(!c||!Number.isFinite(c.latitude)||!Number.isFinite(c.longitude))return;
-  const acc=Number.isFinite(c.accuracy)?c.accuracy:999,pt=[c.latitude,c.longitude];
-  live.fixAt=Date.now();live.acc=acc;live.cur=pt;
-  if(acc<=40){
-    if(!live.last)addPoint(pt);
-    else{
-      const d=hav(live.last,pt);
-      if(d>=0.5)addPoint(pt);
-      else if(d>=Math.max(0.005,acc/2000)){addDist(d);addPoint(pt)}
-    }
-  }
-  updateRider();
-};
-function addPoint(pt){
-  live.last=pt;live.pts.push(pt);if(live.pts.length>6000)live.pts=live.pts.filter((_,i)=>i%2===0);
-  if(trip){trip.pts.push(pt);if(trip.pts.length>4000)trip.pts=trip.pts.filter((_,i)=>i%2===0)}
-  if(liveLine&&!reviewing)liveLine.setLatLngs(live.pts);
-}
+/* ───────── Telemetrie ───────── */
+function parseValues(a){if(a.length<53)throw new Error('GET_VALUES-Antwort zu kurz ('+a.length+' Byte)');
+ const v={tFet:rd.i16(a,1)/10,tMot:rd.i16(a,3)/10,iMot:rd.i32(a,5)/100,iIn:rd.i32(a,9)/100,idc:rd.i32(a,13)/100,iq:rd.i32(a,17)/100,duty:rd.i16(a,21)/1000,rpm:rd.i32(a,23),vin:rd.i16(a,27)/10,ah:rd.i32(a,29)/1e4,ahc:rd.i32(a,33)/1e4,wh:rd.i32(a,37)/1e4,whc:rd.i32(a,41)/1e4,tach:rd.i32(a,45),tachAbs:rd.i32(a,49),fault:a.length>53?a[53]:0,ctrlId:a.length>58?a[58]:null};return v}
+const canKey=k=>k==='C'?cfg.canId:null;
+async function getValues(k){const can=canKey(k),exp=k==='C'?cfg.canId:localId;
+ const pl=await request(fwd(can,[CMD.VALUES]),CMD.VALUES,{timeout:800,match:a=>a.length<59||exp==null||a[58]===exp});return parseValues(pl)}
+class Counter{constructor(){this.prev=null;this.acc=0}add(v){if(this.prev!==null){const d=v-this.prev;this.acc+=d>=0?d:v}this.prev=v}reset(){this.acc=0}}
+const ctr={L:{ah:new Counter(),ahc:new Counter(),wh:new Counter(),whc:new Counter(),tach:new Counter()},C:{ah:new Counter(),ahc:new Counter(),wh:new Counter(),whc:new Counter(),tach:new Counter()}};
+const S={L:null,C:null};let lastTick=0;
+function newSes(){return{t:0,sp:0,p:0,m:0,f:0,i:0,spmax:0,pmax:-Infinity,pmin:Infinity,mmax:-Infinity,fmax:-Infinity,imax:-Infinity}}
+let ses=newSes();
+function activeKeys(){const t=cfg.target;if(t==='local')return['L'];if(!validCan(cfg.canId))return['L'];return t==='can'?['C']:['L','C']}
+function onSample(k,v){v.t=performance.now();S[k]=v;const c=ctr[k];c.ah.add(v.ah);c.ahc.add(v.ahc);c.wh.add(v.wh);c.whc.add(v.whc);c.tach.add(v.tachAbs)}
+function resetSamples(){S.L=S.C=null;lastTick=0}
+const ids1=['speed','power','amps','volts','motor','fet','erpm','duty'],ids2=['ah','ahc','wh','whc','dist','eff','ss','ps','pmin','ms','fs','is'];
+function renderEmpty(){[...ids1,...ids2].forEach(i=>$(i).textContent='--');$('time').textContent='00:00:00';$('fault').className='fault';$('motors').innerHTML='<tr><td class="muted">Keine Daten.</td></tr>'}
+function tick(){const now=performance.now(),ks=activeKeys().filter(k=>S[k]&&now-S[k].t<3000);if(!ks.length){return}
+ const{circ,pp,ratio}=cal(),vs=ks.map(k=>S[k]);const sum=f=>vs.reduce((s,v)=>s+f(v),0),avg=f=>sum(f)/vs.length,max=f=>Math.max(...vs.map(f));
+ const speed=avg(v=>Math.abs(v.rpm)/pp/ratio*circ/1e6*60),iTot=sum(v=>v.iIn),vin=avg(v=>v.vin),power=iTot*vin,tMot=max(v=>v.tMot),tFet=max(v=>v.tFet),duty=avg(v=>v.duty),erpm=avg(v=>v.rpm);
+ const dt=lastTick?Math.min(2,(now-lastTick)/1000):0;lastTick=now;
+ ses.t+=dt;ses.sp+=speed*dt;ses.p+=power*dt;ses.m+=tMot*dt;ses.f+=tFet*dt;ses.i+=iTot*dt;
+ ses.spmax=Math.max(ses.spmax,speed);ses.pmax=Math.max(ses.pmax,power);ses.pmin=Math.min(ses.pmin,power);ses.mmax=Math.max(ses.mmax,tMot);ses.fmax=Math.max(ses.fmax,tFet);ses.imax=Math.max(ses.imax,iTot);
+ const A=x=>ses.t>0?x/ses.t:NaN;
+ $('speed').textContent=num(speed);$('power').textContent=num(power,0);$('amps').textContent=num(iTot);$('volts').textContent=num(vin);$('motor').textContent=num(tMot);$('fet').textContent=num(tFet);$('erpm').textContent=Math.round(erpm);$('duty').textContent=num(duty*100);
+ const cs=f=>ks.reduce((s,k)=>s+f(ctr[k]),0);
+ const ah=cs(c=>c.ah.acc),ahc=cs(c=>c.ahc.acc),wh=cs(c=>c.wh.acc),whc=cs(c=>c.whc.acc);
+ const steps=ks.reduce((s,k)=>s+ctr[k].tach.acc,0)/ks.length,km=steps/(6*pp)/ratio*circ/1e6;
+ $('ah').textContent=num(ah,3);$('ahc').textContent=num(ahc,3);$('wh').textContent=num(wh,3);$('whc').textContent=num(whc,3);$('dist').textContent=num(km,3);$('eff').textContent=km>=0.01?num((wh-whc)/km,2):'--';
+ $('ss').textContent=num(A(ses.sp))+' / '+num(ses.spmax);$('ps').textContent=num(A(ses.p),0)+' / '+num(ses.pmax,0);$('pmin').textContent=num(ses.pmin,0);$('ms').textContent=num(A(ses.m))+' / '+num(ses.mmax);$('fs').textContent=num(A(ses.f))+' / '+num(ses.fmax);$('is').textContent=num(A(ses.i))+' / '+num(ses.imax);
+ const sec=Math.floor(ses.t);$('time').textContent=[sec/3600|0,sec%3600/60|0,sec%60].map(x=>String(x).padStart(2,'0')).join(':');
+ const fl=vs.map((v,i)=>v.fault?(ks[i]==='C'?'CAN '+cfg.canId:'LOCAL')+': '+(FAULTS[v.fault]||('Code '+v.fault)):'').filter(Boolean);
+ $('fault').textContent=fl.length?'⚠ VESC FAULT — '+fl.join(' · '):'';$('fault').className='fault'+(fl.length?' show':'');
+ const hd='<tr><th></th>'+ks.map(k=>'<th>'+(k==='C'?'CAN '+cfg.canId:'LOCAL'+(localId!=null?' ('+localId+')':''))+'</th>').join('')+'</tr>';
+ const row=(l,f)=>'<tr><td>'+l+'</td>'+vs.map(v=>'<td>'+f(v)+'</td>').join('')+'</tr>';
+ $('motors').innerHTML=hd+row('Motorstrom A',v=>num(v.iMot,1))+row('Akkustrom A',v=>num(v.iIn,1))+row('ERPM',v=>v.rpm)+row('Duty %',v=>num(v.duty*100))+row('FET °C',v=>num(v.tFet))+row('Motor °C',v=>num(v.tMot))+row('Fault',v=>FAULTS[v.fault]||v.fault);
+ gpsCalSample(speed)}
+$('reset').onclick=()=>{ses=newSes();for(const k of['L','C'])for(const c of Object.values(ctr[k]))c.reset();lastTick=0;ids2.forEach(i=>$(i).textContent='--');$('time').textContent='00:00:00';tick()};
+let pollGen=0,errs={L:'',C:''};
+function stopPoll(){pollGen++}
+function startPoll(my){const gen=++pollGen,fails={L:0,C:0};let nextC=0;
+ (async()=>{while(gen===pollGen&&chW){const t0=performance.now();
+  for(const k of activeKeys()){if(k==='C'&&fails.C>=3&&performance.now()<nextC)continue;
+   try{onSample(k,await getValues(k));fails[k]=0;errs[k]=''}catch(e){fails[k]++;errs[k]=e.message;if(k==='C'&&fails.C>=3)nextC=performance.now()+3000;if(gen!==pollGen||!chW)return}}
+  tick();
+  if(fails.L>=6)diag('Keine Antwort vom lokalen VESC ('+errs.L+'). Verbindung prüfen.');
+  else if(activeKeys().includes('C')&&fails.C>=3)diag('CAN-ID '+cfg.canId+' antwortet nicht ('+errs.C+'). Zweiten Controller, CAN-Kabel und CAN-ID prüfen.');
+  await sleep(Math.max(30,120-(performance.now()-t0)))}})()}
+$('poll').onclick=async()=>{try{const out=['Link: '+(dev?.name||'?')+' · '+svcName,'FW '+fwInfo.major+'.'+fwInfo.minor+' · HW '+fwInfo.hw+' · lokale CAN-ID '+localId,'Pakete rx/tx/verworfen/CRC-Fehler: '+stats.rx+'/'+stats.tx+'/'+stats.drop+'/'+stats.crc];
+ for(const k of activeKeys()){const v=await getValues(k);out.push((k==='C'?'CAN '+cfg.canId:'LOCAL')+': U '+num(v.vin)+' V · Iakku '+num(v.iIn,2)+' A · Imotor '+num(v.iMot,2)+' A · ERPM '+v.rpm+' · Duty '+num(v.duty*100)+' % · FET '+num(v.tFet)+' °C · Motor '+num(v.tMot)+' °C · Fault '+(FAULTS[v.fault]||v.fault))}
+ diag(out.join('\n'))}catch(e){diag('GET_VALUES fehlgeschlagen: '+e.message);toast(e.message,'err')}};
 
-/* ---------- 1 s tick ---------- */
-let lastTick=performance.now();
-setInterval(()=>{
-  const now=performance.now(),dt=Math.min(3,(now-lastTick)/1000);lastTick=now;
-  const liveData=!demo&&connected&&lastReply&&Date.now()-lastReply<3000&&Number.isFinite(t.voltage);
-  if(liveData){const s=socFromVoltage(t.voltage);if(s!==null)socEma=socEma===null?s:socEma+(s-socEma)*Math.min(1,dt*0.04)}
-  let spd=demo?null:kmh();if(!Number.isFinite(spd))spd=(!demo&&Number.isFinite(gpsKmh))?gpsKmh:null;
-  const gpsFresh=Date.now()-live.fixAt<5000;
-  if(!demo&&!gpsFresh&&Number.isFinite(spd)&&spd>1)addDist(spd*dt/3600);
-  const moving=Number.isFinite(spd)&&spd>2;
-  if(moving&&liveData&&Number.isFinite(t.inputCurrent))addWh(t.voltage*t.inputCurrent*mult()*dt/3600);
-  if(trip&&moving){trip.movS+=dt;if(spd>trip.maxKmh)trip.maxKmh=spd}
-  if(trip&&Date.now()-lastPersist>15000){lastPersist=Date.now();persistActive()}
-  renderMap();
-},1000);
-window.addEventListener("pagehide",persistActive);
+/* ───────── MCCONF lesen/schreiben (nur Felder, die gegen Firmware 6.00 verifiziert sind) ───────── */
+async function getTemp(k){const a=await request(fwd(canKey(k),[CMD.MCCONF_TEMP]),CMD.MCCONF_TEMP,{timeout:1500,retries:1}).catch(e=>{throw new Error('COMM_GET_MCCONF_TEMP ('+(k==='C'?'CAN '+cfg.canId:'LOCAL')+'): '+e.message+' — Firmware evtl. zu alt (geprüft gegen 6.00).')});
+ if(a.length<50)throw new Error('GET_MCCONF_TEMP-Antwort zu kurz ('+a.length+')');
+ return{minScale:rd.f32a(a,1),maxScale:rd.f32a(a,5),minErpm:rd.f32a(a,9),maxErpm:rd.f32a(a,13),minDuty:rd.f32a(a,17),maxDuty:rd.f32a(a,21),wattMin:rd.f32a(a,25),wattMax:rd.f32a(a,29),inMin:rd.f32a(a,33),inMax:rd.f32a(a,37),si:{poles:a[41],gear:rd.f32a(a,42),wheel:rd.f32a(a,46)}}}
+async function getMcconf(k,cmd){const a=await request(fwd(canKey(k),[cmd]),cmd,{timeout:7000,retries:1});
+ if(a.length<90)throw new Error('MCCONF-Antwort zu kurz ('+a.length+' Byte)');
+ const o={sig:rd.u32(a,1),curMax:rd.f32a(a,9),curMin:rd.f32a(a,13),wattMax:rd.f32a(a,78),wattMin:rd.f32a(a,82)};
+ if(!(o.curMax>0&&o.curMax<3000&&o.curMin<0&&o.curMin>-3000&&o.wattMax>0&&o.wattMin<0))throw new Error('MCCONF-Layout nicht erkannt (Signatur 0x'+o.sig.toString(16)+', Max '+o.curMax+' A, Min '+o.curMin+' A). Stromskalierung aus Sicherheitsgründen abgebrochen.');return o}
+function buildTemp(setup,o){const b=[setup?CMD.TEMP_SETUP:CMD.TEMP,o.store?1:0,0,1,0];for(const x of[o.minS,o.maxS,o.minV,o.maxV,o.minD,o.maxD,o.wMin,o.wMax])b.push(...f32aEnc(x));return b}
+async function sendTemp(k,setup,o){const inner=buildTemp(setup,o),exp=setup?CMD.TEMP_SETUP:CMD.TEMP;await request(fwd(canKey(k),inner),exp,{timeout:o.store?6000:2500,retries:o.store?0:1})}
 
-/* ---------- trip buttons ---------- */
-$("tripStart").onclick=()=>{
-  if(trip)return;
-  if(demo){note("Turn demo mode off in Settings to record a real trip.");return}
-  if(!gpsOn)$("gpsToggle").click();
-  exitReview();
-  trip={id:Date.now(),start:Date.now(),km:0,wh:0,movS:0,maxKmh:0,pts:[],pct0:socEma===null?null:Math.round(socEma)};
-  if(live.cur&&live.acc<=40)trip.pts.push(live.cur);
-  persistActive();renderMap();note("Trip recording. GPS is on.");
-};
-$("tripEnd").onclick=()=>{
-  if(!trip)return;
-  const tr=trip;trip=null;persistActive();
-  tr.end=Date.now();tr.pct1=socEma===null?null:Math.round(socEma);
-  if(tr.km<0.05){renderMap();note("Trip too short, not saved.");return}
-  tr.pts=tr.pts.map(p=>[+p[0].toFixed(5),+p[1].toFixed(5)]);
-  trips.unshift(tr);if(trips.length>200)trips.length=200;
-  const ok=saveTrips();renderTrips();renderMap();if(ok)note("Trip saved. Find it under TRIPS.");
-};
+/* ───────── Profile ───────── */
+const pdef={top:95,reverse:5,accel:130,brake:-80,out:5000,regen:-500,limit:true,drive:'single'};
+const normP=p=>({id:String(p.id||'p'+Date.now()),name:String(p.name||'Profil').slice(0,32),top:+p.top||pdef.top,reverse:Number.isFinite(+p.reverse)?+p.reverse:pdef.reverse,accel:Number.isFinite(+p.accel)?+p.accel:pdef.accel,brake:Number.isFinite(+p.brake)?+p.brake:pdef.brake,out:+p.out||pdef.out,regen:Number.isFinite(+p.regen)?+p.regen:pdef.regen,limit:p.limit!==false&&p.limit!=='false',drive:p.drive==='dual'?'dual':'single'});
+let profiles=(()=>{try{const a=JSON.parse(localStorage.getItem('vesc-profiles')||'[]');return Array.isArray(a)?a.filter(x=>x&&typeof x==='object').map(normP):[]}catch{return[]}})();
+let activeProfile=localStorage.getItem('vesc-active-profile')||'',editingProfile=null,applying=false;
+const persistProfiles=()=>lsSet('vesc-profiles',profiles);
+const profStatus=t=>{const e=$('profileStatus');e.style.display=t?'block':'none';e.textContent=t||''};
+function openProfile(p){editingProfile=p?.id||null;$('modalTitle').textContent=p?'Edit profile':'Add profile';const q=p||pdef;$('pfName').value=p?p.name:'';$('pfTop').value=q.top;$('pfReverse').value=q.reverse;$('pfAccel').value=q.accel;$('pfBrake').value=q.brake;$('pfOut').value=q.out;$('pfRegen').value=q.regen;$('pfLimit').value=String(q.limit);$('pfDrive').value=q.drive;$('profileModal').classList.add('show')}
+function closeProfile(){$('profileModal').classList.remove('show')}
+function renderProfiles(){const host=$('profiles');host.innerHTML='';
+ if(!profiles.length){host.innerHTML='<div class="card muted">Noch keine Profile. Tippe auf „Add profile“, um dein erstes Profil zu erstellen.</div>';return}
+ profiles.forEach((p,i)=>{const el=document.createElement('div');el.className='profile-item';const active=p.id===activeProfile;
+  el.innerHTML='<div class="profile-main"><div class="row"><span class="profile-name"></span>'+(active?'<span class="active-tag">ACTIVE</span>':'')+'</div><div class="profile-meta"></div></div><details class="profile-menu"><summary>⋮</summary><div class="menu"><button data-act="up">↑ Move up</button><button data-act="down">↓ Move down</button><button data-act="until">Use until reboot</button><button data-act="perm">Use permanently</button><button data-act="edit">Edit</button><button data-act="dup">Duplicate</button><button data-act="delete" style="color:#ff8888">Delete</button></div></details>';
+  el.querySelector('.profile-name').textContent=p.name;
+  el.querySelector('.profile-meta').textContent=(p.drive==='single'?'Single':'Dual')+' Drive · '+p.top+' km/h · '+(p.limit?p.out+' W':'Power-Limit aus')+' · '+p.accel+' A / '+p.brake+' A';
+  el.querySelectorAll('[data-act]').forEach(b=>b.onclick=()=>{const act=b.dataset.act;el.querySelector('details').open=false;
+   if(act==='up'&&i>0){[profiles[i-1],profiles[i]]=[profiles[i],profiles[i-1]];persistProfiles();renderProfiles()}
+   if(act==='down'&&i<profiles.length-1){[profiles[i+1],profiles[i]]=[profiles[i],profiles[i+1]];persistProfiles();renderProfiles()}
+   if(act==='until')applyProfile(p,false);if(act==='perm')applyProfile(p,true);if(act==='edit')openProfile(p);
+   if(act==='dup'){profiles.splice(i+1,0,normP({...p,id:'p'+Date.now(),name:(p.name+' Kopie').slice(0,32)}));persistProfiles();renderProfiles()}
+   if(act==='delete'&&confirm('Delete profile "'+p.name+'"?')){profiles=profiles.filter(x=>x.id!==p.id);if(activeProfile===p.id){activeProfile='';localStorage.removeItem('vesc-active-profile')}persistProfiles();renderProfiles()}});
+  host.appendChild(el)})}
+$('addProfile').onclick=()=>openProfile();$('cancelProfile').onclick=closeProfile;
+$('profileModal').addEventListener('click',e=>{if(e.target===$('profileModal'))closeProfile()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeProfile()});
+document.addEventListener('click',e=>{document.querySelectorAll('.profile-menu[open]').forEach(d=>{if(!d.contains(e.target))d.open=false})});
+$('saveProfile').onclick=()=>{const name=$('pfName').value.trim();if(!name){toast('Bitte einen Profilnamen eingeben.','err');return}
+ const g=id=>$(id).value.trim()===''?NaN:+$(id).value,top=g('pfTop'),rev=g('pfReverse'),acc=g('pfAccel'),brk=g('pfBrake'),out=g('pfOut'),reg=g('pfRegen');
+ if(![top,rev,acc,brk,out,reg].every(Number.isFinite)){toast('Bitte alle Felder mit Zahlen füllen.','err');return}
+ if(top<=0||top>300||rev<0||rev>100||acc<0||acc>2000||Math.abs(brk)>2000||out<=0||out>1e6||Math.abs(reg)>1e6){toast('Wert außerhalb des zulässigen Bereichs (Top 1–300 km/h, Reverse 0–100 km/h, Ströme ≤ 2000 A).','err');return}
+ const p=normP({id:editingProfile||('p'+Date.now()),name,top,reverse:rev,accel:acc,brake:-Math.abs(brk),out,regen:-Math.abs(reg),limit:$('pfLimit').value==='true',drive:$('pfDrive').value});
+ if(editingProfile)profiles=profiles.map(x=>x.id===editingProfile?p:x);else profiles.push(p);persistProfiles();renderProfiles();closeProfile()};
+async function readState(k,needDef){const temp=await getTemp(k),base=await getMcconf(k,CMD.MCCONF);const def=needDef?await getMcconf(k,CMD.MCCONF_DEFAULT):null;return{k,temp,base,def}}
+async function applyProfile(p,permanent){
+ if(applying)return;if(!connected){toast('Nicht verbunden – das Profil kann nur bei bestehender VESC-Verbindung angewendet werden.','err');return}
+ const dual=p.drive==='dual',hasCan=validCan(cfg.canId);
+ if(dual&&!hasCan){toast('Dual Drive benötigt eine CAN-ID (Settings).','err');return}
+ const txt='Profil „'+p.name+'“ ('+(dual?'Dual':'Single')+' Drive) '+(permanent?'DAUERHAFT im Flash speichern':'bis zum Neustart anwenden')+'?\n\nTop '+p.top+' km/h · Reverse '+p.reverse+' km/h\nAccel '+p.accel+' A · Brake '+p.brake+' A (je Controller)\nPower '+(p.limit?p.out+' W / '+p.regen+' W gesamt':'Standard-Limits der Firmware')+(dual?'\nController: LOCAL + CAN '+cfg.canId:'')+(!dual&&cfg.disableSecondary&&hasCan?'\nCAN '+cfg.canId+': wird bis Neustart per Stromskala 0 abgeschaltet':'')+(permanent?'\n\nHinweis: Schreibt die Limits in die Konfiguration des Controllers.':'');
+ if(!confirm(txt))return;
+ applying=true;profStatus('Übertrage Profil „'+p.name+'“…');const notes=[];
+ try{
+  const n=dual?2:1,keys=['L'];let secondary=null;
+  if(dual)keys.push('C');
+  const st={};for(const k of keys){profStatus('Lese Konfiguration '+(k==='C'?'CAN '+cfg.canId:'LOCAL')+'…');st[k]=await readState(k,!p.limit)}
+  if(!dual&&hasCan&&cfg.disableSecondary){try{profStatus('Lese Konfiguration CAN '+cfg.canId+'…');secondary=await getTemp('C')}catch(e){notes.push('CAN '+cfg.canId+' nicht erreichbar – nur LOCAL konfiguriert.')}}
+  const scale=(target,base,label,key)=>{const t=Math.abs(target),b=Math.abs(base),s=t/b;if(s>1){notes.push(label+' '+t+' A > Controller-Limit '+b.toFixed(0)+' A ('+(key==='C'?'CAN':'LOCAL')+') → auf '+b.toFixed(0)+' A begrenzt. Höheres Limit im VESC Tool (Motor Current Max) setzen.');return 1}return s};
+  const mk=k=>{const s=st[k],siOk=s.temp.si.wheel>0&&s.temp.si.gear>0&&s.temp.si.poles>0;
+   return{minS:scale(p.brake,s.base.curMin,'Brake',k),maxS:scale(p.accel,s.base.curMax,'Accel',k),minV:-Math.abs(p.reverse)/3.6,maxV:p.top/3.6,minD:s.temp.minDuty,maxD:s.temp.maxDuty,
+    wMin:p.limit?-Math.abs(p.regen)/n:s.def.wattMin,wMax:p.limit?p.out/n:s.def.wattMax,store:permanent,si:s.temp.si,siOk}};
+  const L=mk('L');if(!L.siOk)throw new Error('VESC-Kalibrierung (Rad/Getriebe/Pole) ist im Controller nicht gesetzt – Geschwindigkeitslimits in km/h sind nicht berechenbar. Im VESC Tool setzen oder „Aus VESC lesen“ prüfen.');
+  if(dual){const C=mk('C');const si=C.siOk?C.si:L.si;if(!C.siOk)notes.push('CAN '+cfg.canId+': keine Rad-/Getriebe-Werte – LOCAL-Werte für die km/h-Umrechnung verwendet.');const f=siFact(si);
+   profStatus('Schreibe CAN '+cfg.canId+'…');await sendTemp('C',false,{...C,minV:C.minV*f,maxV:C.maxV*f})}
+  else if(secondary){profStatus('Schalte CAN '+cfg.canId+' ab…');await sendTemp('C',false,{minS:0,maxS:0,minV:secondary.minErpm,maxV:secondary.maxErpm,minD:secondary.minDuty,maxD:secondary.maxDuty,wMin:secondary.wattMin,wMax:secondary.wattMax,store:false});notes.push('CAN '+cfg.canId+' ist nur bis zum Neustart abgeschaltet (wird nie dauerhaft gespeichert).')}
+  profStatus('Schreibe LOCAL…');await sendTemp('L',true,L);
+  profStatus('Verifiziere…');const v=await readState('L',false);const f=siFact(v.temp.si);
+  const top=v.temp.maxErpm/f*3.6,rev=-v.temp.minErpm/f*3.6,acc=v.temp.maxScale*v.base.curMax,brk=v.temp.minScale*v.base.curMin;
+  const ok=Math.abs(top-p.top)<=1.5;
+  activeProfile=p.id;if(permanent)localStorage.setItem('vesc-active-profile',p.id);renderProfiles();
+  profStatus('✓ Profil „'+p.name+'“ '+(permanent?'dauerhaft gespeichert':'bis Neustart aktiv')+'.\nVerifiziert (LOCAL): Top '+num(top)+' km/h · Reverse '+num(rev)+' km/h · Accel '+num(acc)+' A · Brake '+num(brk)+' A · Power '+num(v.temp.wattMax,0)+' / '+num(v.temp.wattMin,0)+' W'+(ok?'':'\n⚠ Top Speed weicht ab – Firmware hat den Wert begrenzt.')+(notes.length?'\n'+notes.map(x=>'• '+x).join('\n'):''));
+  toast('Profil angewendet','ok')
+ }catch(e){profStatus('✗ Profil nicht (vollständig) angewendet: '+e.message+(notes.length?'\n'+notes.map(x=>'• '+x).join('\n'):''));toast('Profil fehlgeschlagen: '+e.message,'err')}
+ finally{applying=false}}
+async function detectActive(my){try{const s=await readState('L',false);if(my!==linkId)return;const f=siFact(s.temp.si);if(!(f>0))return;
+ const top=s.temp.maxErpm/f*3.6,rev=-s.temp.minErpm/f*3.6,acc=s.temp.maxScale*s.base.curMax,brk=Math.abs(s.temp.minScale*s.base.curMin);
+ const hit=profiles.find(p=>Math.abs(p.top-top)<=1.5&&Math.abs(p.reverse-rev)<=1.5&&Math.abs(p.accel-acc)<=1.5&&Math.abs(Math.abs(p.brake)-brk)<=1.5&&(!p.limit||Math.abs((p.drive==='dual'?2:1)*s.temp.wattMax-p.out)/p.out<0.03));
+ activeProfile=hit?hit.id:'';renderProfiles()}catch(e){}}
+function postConnect(my){detectActive(my);checkCalDev()}
 
-/* ---------- map ---------- */
-function ensureMap(){
-  if(map||!window.L)return;
-  map=L.map("map",{zoomControl:false,attributionControl:true}).setView([20,0],2);
-  L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?key=cb1_4waq_1_b63fa21f84046b4f2df09576",{maxZoom:19,subdomains:"abcd",attribution:"© OpenStreetMap contributors © CARTO"}).addTo(map);
-  liveLine=L.polyline(live.pts,{color:"#35f28a",weight:4,opacity:.9}).addTo(map);
-  map.on("dragstart",()=>{follow=false;$("followBtn").textContent="FOLLOW OFF"});
-  $("map").classList.remove("hidden");$("mapFallback").classList.add("hidden");
-  updateRider();
-}
-function updateRider(){
-  if(!live.cur)return;
-  if(map){
-    if(!rider)rider=L.circleMarker(live.cur,{radius:8,color:"#fff",weight:2,fillColor:"#35f28a",fillOpacity:1}).addTo(map);
-    else rider.setLatLng(live.cur);
-    if(!reviewing&&(follow||firstFix)){map.setView(live.cur,firstFix?16:Math.max(map.getZoom(),15),{animate:false});firstFix=false}
-  }else drawFallback();
-}
-function drawFallback(){
-  const cv=$("mapFallback"),r=window.devicePixelRatio||1,w=cv.clientWidth,h=cv.clientHeight;if(!w||!h)return;
-  cv.width=w*r;cv.height=h*r;const g=cv.getContext("2d");g.scale(r,r);g.clearRect(0,0,w,h);
-  const pts=reviewing?reviewing.pts:live.pts;
-  if(pts.length<1){g.fillStyle="#666";g.font="12px system-ui";g.textAlign="center";g.fillText("No track yet. Turn GPS on and start moving.",w/2,h/2);return}
-  let a=90,b=-90,c=180,d=-180;for(const p of pts){a=Math.min(a,p[0]);b=Math.max(b,p[0]);c=Math.min(c,p[1]);d=Math.max(d,p[1])}
-  const k=Math.cos((a+b)/2*Math.PI/180),sx=Math.max((d-c)*k,1e-5),sy=Math.max(b-a,1e-5),pad=46,sc=Math.min((w-2*pad)/sx,(h-2*pad)/sy);
-  const X=p=>(w-sx*sc)/2+(p[1]-c)*k*sc,Y=p=>(h+sy*sc)/2-(p[0]-a)*sc;
-  g.strokeStyle=reviewing?"#ffd24a":"#35f28a";g.lineWidth=3;g.lineJoin="round";g.beginPath();pts.forEach((p,i)=>i?g.lineTo(X(p),Y(p)):g.moveTo(X(p),Y(p)));g.stroke();
-  const e=pts[pts.length-1];g.fillStyle="#fff";g.beginPath();g.arc(X(e),Y(e),5,0,7);g.fill();
-}
-function drawReview(){
-  const tr=reviewing;if(!tr)return;
-  $("reviewPill").classList.remove("hidden");
-  if(!map){drawFallback();return}
-  if(reviewLayer)map.removeLayer(reviewLayer);
-  if(liveLine)map.removeLayer(liveLine);
-  reviewLayer=L.layerGroup().addTo(map);
-  if(tr.pts.length){
-    const pl=L.polyline(tr.pts,{color:"#ffd24a",weight:4}).addTo(reviewLayer);
-    L.circleMarker(tr.pts[0],{radius:7,color:"#fff",weight:2,fillColor:"#35f28a",fillOpacity:1}).addTo(reviewLayer);
-    L.circleMarker(tr.pts[tr.pts.length-1],{radius:7,color:"#fff",weight:2,fillColor:"#ff6961",fillOpacity:1}).addTo(reviewLayer);
-    map.fitBounds(pl.getBounds(),{padding:[24,24]});
-  }
-}
-function exitReview(){
-  if(!reviewing)return;reviewing=null;$("reviewPill").classList.add("hidden");
-  if(map){if(reviewLayer){map.removeLayer(reviewLayer);reviewLayer=null}liveLine.setLatLngs(live.pts);liveLine.addTo(map);if(live.cur)map.setView(live.cur,16,{animate:false})}else drawFallback();
-}
-$("reviewPill").onclick=exitReview;
-$("followBtn").onclick=()=>{follow=!follow;$("followBtn").textContent=follow?"FOLLOW ON":"FOLLOW OFF";if(follow&&live.cur&&map&&!reviewing)map.setView(live.cur,Math.max(map.getZoom(),15))};
-$("mapGps").onclick=()=>$("gpsToggle").click();
-function onMapShown(){
-  if(window.L){ensureMap();if(map){map.invalidateSize();if(reviewing)drawReview()}}
-  else{$("map").classList.add("hidden");$("mapFallback").classList.remove("hidden");drawFallback()}
-}
-document.querySelectorAll("nav button").forEach(b=>b.addEventListener("click",()=>{if(b.dataset.screen==="mapScreen")setTimeout(onMapShown,60)}));
-const lj=document.getElementById("leafletJs");if(lj)lj.addEventListener("load",()=>{if(!$("mapScreen").classList.contains("hidden"))onMapShown()});
-window.addEventListener("resize",()=>{if(!$("mapScreen").classList.contains("hidden"))onMapShown()});
+/* ───────── CAN-Scan ───────── */
+$('scanCan').onclick=async()=>{const box=$('canChips');box.textContent='Scan läuft (kann ~10 s dauern)…';$('scanCan').disabled=true;
+ try{const a=await request([CMD.PING_CAN],CMD.PING_CAN,{timeout:20000});const ids=[...a.slice(1)];box.innerHTML='';
+  if(!ids.length){box.textContent='Keine CAN-Controller gefunden.';return}
+  ids.forEach(id=>{const b=document.createElement('button');b.className='chip';b.textContent='CAN '+id;b.onclick=()=>{$('canId').value=id;cfg.canId=id;saveCfg();resetSamples();toast('CAN-ID '+id+' übernommen','ok')};box.appendChild(b)})}
+ catch(e){box.textContent='Scan fehlgeschlagen: '+e.message}finally{$('scanCan').disabled=!connected}};
 
-/* ---------- map tab text ---------- */
-function renderMap(){
-  const rec=!!trip;
-  $("recMark").classList.toggle("hidden",!rec);
-  $("tripStart").disabled=rec;$("tripEnd").disabled=!rec;
-  $("mapGps").textContent=gpsOn?"GPS ON":"GPS OFF";
-  $("mapGps").classList.toggle("warn",!gpsOn);
-  const km=rec?trip.km:odoKm;
-  $("mDistLbl").textContent=rec?"TRIP DISTANCE":"SESSION DISTANCE";
-  $("mDist").textContent=D(km).toFixed(2)+" "+DU();
-  $("mTime").textContent=rec?"recording · "+fmtDur(Date.now()-trip.start):"not recording";
-  const r=range();
-  $("mRange").textContent=r.km!==undefined?"~"+Math.round(D(r.km))+" "+DU():"--";
-  $("mRangeNote").textContent=r.note;
-  const cons=r.cons!==undefined?r.cons:consumption();
-  $("mCons").textContent=cons?Math.round(unit==="mph"?cons/0.621371:cons)+" Wh/"+DU():"--";
-  if(rec&&trip.movS>20){$("mSpeed").textContent=Math.round(D(trip.km/(trip.movS/3600)))+" / "+Math.round(D(trip.maxKmh));}else $("mSpeed").textContent="--";
-  $("mapNote").textContent=reviewing?"Viewing a saved trip":(!gpsOn?"GPS is off. Turn it on to see your position.":(Date.now()-live.fixAt>8000?"Waiting for a GPS fix…":"GPS accuracy ±"+Math.round(live.acc)+" m"));
-  if(!window.L&&!$("mapScreen").classList.contains("hidden"))drawFallback();
-}
+/* ───────── GPS & GPS-Kalibrierung ───────── */
+let gpsId=null,gpsAt=0,gpsSpeed=null,gc=null;
+$('gpsbtn').onclick=()=>{if(!navigator.geolocation){toast('Geolocation nicht verfügbar.','err');return}
+ if(gpsId!==null){navigator.geolocation.clearWatch(gpsId);gpsId=null;gpsSpeed=null;$('gps').textContent='--';$('gpsbtn').textContent='GPS aktivieren';return}
+ gpsId=navigator.geolocation.watchPosition(p=>{gpsAt=Date.now();gpsSpeed=p.coords.speed==null?null:p.coords.speed*3.6;$('gps').textContent=gpsSpeed==null?'--':num(gpsSpeed)},e=>{toast('GPS: '+e.message,'err')},{enableHighAccuracy:true,maximumAge:1000,timeout:15000});$('gpsbtn').textContent='GPS deaktivieren'};
+setInterval(()=>{if(gpsId!==null&&Date.now()-gpsAt>4000)$('gps').textContent='--'},1000);
+function gpsCalSample(v){if(!gc)return;if(gpsId===null||gpsSpeed==null||Date.now()-gpsAt>1500||v<10||gpsSpeed<10)return;gc.n++;gc.g+=gpsSpeed;gc.v+=v;$('calinfo').textContent='GPS-Kalibrierung: '+gc.n+' Messwerte · GPS Ø '+num(gc.g/gc.n)+' km/h · VESC Ø '+num(gc.v/gc.n)+' km/h · Faktor '+num(gc.g/gc.v,4)+(gc.n>=30?' — zum Übernehmen erneut tippen.':'')}
+$('gpsCal').onclick=()=>{if(!gc){if(gpsId===null){toast('Zuerst GPS aktivieren.','err');return}gc={n:0,g:0,v:0};$('gpsCal').textContent='Übernehmen / Abbrechen';$('calinfo').textContent='Mit konstanter Geschwindigkeit > 10 km/h fahren…';return}
+ if(gc.n>=30){const f=gc.g/gc.v,c=Math.round(cal().circ*f);if(c>=300&&c<=4000&&confirm('Radumfang von '+cal().circ+' auf '+c+' mm ändern (Faktor '+f.toFixed(4)+')?')){$('circ').value=c;$('save').onclick()}}else toast('Zu wenig Messwerte – abgebrochen.');
+ gc=null;$('gpsCal').textContent='GPS-Kalibrierung starten'};
 
-/* ---------- trips tab ---------- */
-function renderTrips(){
-  const tot=trips.reduce((s,x)=>s+x.km,0);
-  $("tripsSum").textContent=trips.length?trips.length+" trip"+(trips.length>1?"s":"")+" · "+D(tot).toFixed(1)+" "+DU()+" total":"No trips yet. Start one from the MAP tab.";
-  $("tripList").innerHTML=trips.map(x=>{
-    const dur=x.end-x.start,avg=x.movS>30?x.km/(x.movS/3600):null,wpk=x.km>0.3&&x.wh>0?x.wh/x.km:null;
-    const when=new Date(x.start).toLocaleString([], {dateStyle:"medium",timeStyle:"short"});
-    const bat=x.pct0!=null&&x.pct1!=null?" · battery ~"+x.pct0+"% → ~"+x.pct1+"%":"";
-    return '<div class="trip"><h3>'+when+'</h3><div class="meta"><div>DISTANCE<b>'+D(x.km).toFixed(1)+' '+DU()+'</b></div><div>TIME<b>'+fmtDur(dur)+'</b></div><div>AVG<b>'+(avg?Math.round(D(avg)):'--')+'</b></div><div>MAX<b>'+Math.round(D(x.maxKmh))+'</b></div></div>'
-      +'<div class="tsub">'+(wpk?Math.round(unit==="mph"?wpk/0.621371:wpk)+' Wh/'+DU():'consumption n/a')+bat+'</div>'
-      +'<div class="acts"><button class="btn acc" data-act="view" data-id="'+x.id+'">VIEW MAP</button><button class="btn" data-act="gpx" data-id="'+x.id+'">GPX</button><button class="btn" data-act="del" data-id="'+x.id+'">DELETE</button></div></div>';
-  }).join("");
-}
-let delArm=null;
-$("tripList").addEventListener("click",e=>{
-  const b=e.target.closest("button[data-act]");if(!b)return;
-  const id=Number(b.dataset.id),tr=trips.find(x=>x.id===id);if(!tr)return;
-  if(b.dataset.act==="view"){reviewing=tr;showScreen("mapScreen");setTimeout(onMapShown,60);setTimeout(()=>{if(!window.L)drawFallback()},120);$("reviewPill").classList.remove("hidden")}
-  else if(b.dataset.act==="gpx")exportGpx(tr);
-  else if(b.dataset.act==="del"){
-    if(delArm===id){trips=trips.filter(x=>x.id!==id);saveTrips();delArm=null;renderTrips()}
-    else{delArm=id;b.textContent="TAP AGAIN";setTimeout(()=>{if(delArm===id){delArm=null;b.textContent="DELETE"}},3000)}
-  }
-});
-function exportGpx(tr){
-  const pts=tr.pts.map(p=>'<trkpt lat="'+p[0]+'" lon="'+p[1]+'"/>').join("");
-  const x='<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1" creator="VESC Dash" xmlns="http://www.topografix.com/GPX/1/1"><trk><name>'+new Date(tr.start).toISOString()+'</name><trkseg>'+pts+'</trkseg></trk></gpx>';
-  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([x],{type:"application/gpx+xml"}));
-  a.download="trip-"+new Date(tr.start).toISOString().slice(0,16).replace(/[:T]/g,"-")+".gpx";document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);
-}
-document.querySelectorAll("nav button").forEach(b=>b.addEventListener("click",()=>{if(b.dataset.screen==="tripsScreen")renderTrips()}));
-renderTrips();renderMap();
+/* ───────── Navigation & Gesten ───────── */
+let page=0;
+function nav(n){page=(n+4)%4;$('track').style.transform='translateX(-'+page*100+'vw)';document.querySelectorAll('.dot').forEach((e,i)=>e.classList.toggle('active',i===page))}
+document.querySelectorAll('.dot').forEach((d,i)=>d.onclick=()=>nav(i));
+let gx=0,gy=0,gt=0,gok=false;const gStart=(x,y,t)=>{gok=!document.querySelector('.modal.show')&&!t.closest('input,select,textarea,.menu,summary');gx=x;gy=y;gt=Date.now()},gEnd=(x,y)=>{if(!gok)return;gok=false;const dx=x-gx,dy=y-gy;if(Math.abs(dx)>60&&Math.abs(dx)>Math.abs(dy)*1.5&&Date.now()-gt<900)nav(page+(dx<0?1:-1))};
+document.addEventListener('touchstart',e=>gStart(e.touches[0].clientX,e.touches[0].clientY,e.target),{passive:true});
+document.addEventListener('touchend',e=>gEnd(e.changedTouches[0].clientX,e.changedTouches[0].clientY),{passive:true});
+document.addEventListener('touchcancel',()=>{gok=false},{passive:true});
+document.addEventListener('mousedown',e=>{if(e.button===0&&!e.target.closest('button'))gStart(e.clientX,e.clientY,e.target)});
+document.addEventListener('mouseup',e=>gEnd(e.clientX,e.clientY));
+document.addEventListener('keydown',e=>{if(/INPUT|SELECT|TEXTAREA/.test(document.activeElement?.tagName))return;if(e.key==='ArrowRight')nav(page+1);if(e.key==='ArrowLeft')nav(page-1)});
+
+$('connect').onclick=$('connect2').onclick=connect;$('disconnect').onclick=$('disconnect2').onclick=disconnect;
+renderProfiles();renderEmpty();setStatus(false,'Nicht verbunden');
+window.__vesc={crc16,frame,Parser,f32aEnc,rd,parseValues};
 })();
-
 </script></body></html>
